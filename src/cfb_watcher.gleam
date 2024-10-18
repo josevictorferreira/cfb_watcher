@@ -5,6 +5,7 @@ import lustre
 import lustre/attribute
 import lustre/element
 import lustre/element/html
+import lustre/event
 
 pub fn main() {
   let app = lustre.simple(init, update, view)
@@ -21,8 +22,7 @@ fn init(_flags) -> Model {
     CfbGame(video_id: "9FgQ6qvMePk", autoplay: True, muted: True),
     CfbGame(video_id: "PQ2r0sV1hUs", autoplay: True, muted: True),
     CfbGame(video_id: "RBZ8FnSXfLs", autoplay: True, muted: True),
-    CfbGame(video_id: "uZDPXFQYz0Q", autoplay: True, muted: True),
-    CfbGame(video_id: "OlUMDZchivQ", autoplay: True, muted: True),
+    CfbGame(video_id: "7VjKEkqry6g", autoplay: True, muted: True),
   ])
 }
 
@@ -35,13 +35,21 @@ pub type Model {
 }
 
 pub type Msg {
-  CfbGameRemoved(CfbGame)
+  VideoFocused(CfbGame)
+  VideoRemoved(CfbGame)
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
-    CfbGameRemoved(cfb_game) ->
+    VideoRemoved(cfb_game) ->
       Model(games: list.filter(model.games, fn(game) { game != cfb_game }))
+    VideoFocused(cfb_game) ->
+      Model(
+        games: list.concat([
+          [CfbGame(video_id: cfb_game.video_id, autoplay: True, muted: False)],
+          list.filter(model.games, fn(game) { game != cfb_game }),
+        ]),
+      )
   }
 }
 
@@ -111,8 +119,9 @@ fn video_view(game: CfbGame) -> element.Element(Msg) {
 }
 
 fn video_overlay_view(game: CfbGame) -> element.Element(Msg) {
-  CfbGameRemoved(game)
-  |> video_overlay.new
+  video_overlay.new(VideoFocused(game), [event.on_click(VideoFocused(game))], [
+    event.on_click(VideoRemoved(game)),
+  ])
   |> video_overlay.view
 }
 
@@ -130,6 +139,6 @@ fn youtube_video_url(game: CfbGame) -> String {
   <> game.video_id
   <> "?autoplay="
   <> autoplay
-  <> "&mute="
+  <> "&muted="
   <> mute
 }

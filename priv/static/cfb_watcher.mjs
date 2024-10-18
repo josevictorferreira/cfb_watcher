@@ -1190,6 +1190,9 @@ function do_concat(loop$lists, loop$acc) {
     }
   }
 }
+function concat3(lists) {
+  return do_concat(lists, toList([]));
+}
 function flatten(lists) {
   return do_concat(lists, toList([]));
 }
@@ -2134,6 +2137,16 @@ function button(attrs, children2) {
   return element("button", attrs, children2);
 }
 
+// build/dev/javascript/lustre/lustre/event.mjs
+function on2(name, handler) {
+  return on(name, handler);
+}
+function on_click(msg) {
+  return on2("click", (_) => {
+    return new Ok(msg);
+  });
+}
+
 // build/dev/javascript/cfb_watcher/components/ui/video.mjs
 var VideoProps = class extends CustomType {
   constructor(video_url) {
@@ -2166,36 +2179,24 @@ function view(video_props) {
   );
 }
 
-// build/dev/javascript/lustre/lustre/event.mjs
-function on2(name, handler) {
-  return on(name, handler);
-}
-function on_click(msg) {
-  return on2("click", (_) => {
-    return new Ok(msg);
-  });
-}
-
 // build/dev/javascript/cfb_watcher/components/ui/video_overlay.mjs
 var VideoOverlayProps = class extends CustomType {
-  constructor(msg) {
+  constructor(msg, focus_attributes, remove_attributes) {
     super();
     this.msg = msg;
+    this.focus_attributes = focus_attributes;
+    this.remove_attributes = remove_attributes;
   }
 };
-function new$5(msg) {
-  return new VideoOverlayProps(msg);
+function new$5(msg, focus_attributes, remove_attributes) {
+  return new VideoOverlayProps(msg, focus_attributes, remove_attributes);
 }
 function view2(props) {
   return div(
     toList([class$("overlay")]),
     toList([
       button(
-        toList([
-          value("play"),
-          class$("overlay-button"),
-          on_click(props.msg)
-        ]),
+        toList([value("play"), class$("overlay-button")]),
         toList([text2("Play")])
       ),
       button(
@@ -2207,11 +2208,17 @@ function view2(props) {
         toList([text2("Mute")])
       ),
       button(
-        toList([
+        prepend(class$("overlay-button"), props.focus_attributes),
+        toList([text2("Focus")])
+      ),
+      button(
+        prepend(
           value("removed"),
-          class$("overlay-button"),
-          on_click(props.msg)
-        ]),
+          prepend(
+            class$("overlay-button"),
+            props.remove_attributes
+          )
+        ),
         toList([text2("Remove")])
       )
     ])
@@ -2233,7 +2240,13 @@ var Model2 = class extends CustomType {
     this.games = games;
   }
 };
-var CfbGameRemoved = class extends CustomType {
+var VideoFocused = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var VideoRemoved = class extends CustomType {
   constructor(x0) {
     super();
     this[0] = x0;
@@ -2248,25 +2261,42 @@ function init2(_) {
       new CfbGame("9FgQ6qvMePk", true, true),
       new CfbGame("PQ2r0sV1hUs", true, true),
       new CfbGame("RBZ8FnSXfLs", true, true),
-      new CfbGame("uZDPXFQYz0Q", true, true),
-      new CfbGame("OlUMDZchivQ", true, true)
+      new CfbGame("7VjKEkqry6g", true, true)
     ])
   );
 }
 function update(model, msg) {
-  {
+  if (msg instanceof VideoRemoved) {
     let cfb_game = msg[0];
     return new Model2(
       filter(model.games, (game) => {
         return !isEqual(game, cfb_game);
       })
     );
+  } else {
+    let cfb_game = msg[0];
+    return new Model2(
+      concat3(
+        toList([
+          toList([new CfbGame(cfb_game.video_id, true, false)]),
+          filter(
+            model.games,
+            (game) => {
+              return !isEqual(game, cfb_game);
+            }
+          )
+        ])
+      )
+    );
   }
 }
 function video_overlay_view(game) {
-  let _pipe = new CfbGameRemoved(game);
-  let _pipe$1 = new$5(_pipe);
-  return view2(_pipe$1);
+  let _pipe = new$5(
+    new VideoFocused(game),
+    toList([on_click(new VideoFocused(game))]),
+    toList([on_click(new VideoRemoved(game))])
+  );
+  return view2(_pipe);
 }
 function youtube_video_url(game) {
   let autoplay = (() => {
@@ -2285,7 +2315,7 @@ function youtube_video_url(game) {
       return "0";
     }
   })();
-  return "https://www.youtube.com/embed/" + game.video_id + "?autoplay=" + autoplay + "&mute=" + mute;
+  return "https://www.youtube.com/embed/" + game.video_id + "?autoplay=" + autoplay + "&muted=" + mute;
 }
 function video_view(game) {
   let _pipe = youtube_video_url(game);
@@ -2379,7 +2409,7 @@ function main() {
     throw makeError(
       "let_assert",
       "cfb_watcher",
-      11,
+      12,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

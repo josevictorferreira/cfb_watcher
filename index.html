@@ -9,6 +9,28 @@
 
   <!-- Uncomment this if you add the TailwindCSS integration -->
   <link rel="stylesheet" href="/priv/static/cfb_watcher.css">
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    window.YTConfig = {
+      host: 'https://www.youtube.com'
+    };
+    window.onYouTubeIframeAPIReady = function () {
+      console.log('YouTube API is ready');
+      window.YT = window.YT || {};
+      window.YT.ready = true;
+      player = new window.YT.Player('youtube-player');
+    };
+    function unmuteVideo() {
+      if (player && player.unMute) {
+        player.unMute();
+      }
+    }
+    document.addEventListener('unmuteVideoCommand', function (data) {
+      console.log('Unmuting video');
+      console.log(data);
+      unmuteVideo();
+    });
+  </script>
   <script type="module" src="/priv/static/cfb_watcher.mjs"></script>
 </head>
 

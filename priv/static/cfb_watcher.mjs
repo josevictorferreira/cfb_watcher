@@ -190,56 +190,190 @@ function to_string2(x) {
   return to_string(x);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
-function from_strings(strings) {
-  return concat(strings);
-}
-function to_string3(builder) {
-  return identity(builder);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function length2(string3) {
-  return string_length(string3);
-}
-function concat2(strings) {
-  let _pipe = strings;
-  let _pipe$1 = from_strings(_pipe);
-  return to_string3(_pipe$1);
-}
-function do_slice(string3, idx, len) {
-  let _pipe = string3;
-  let _pipe$1 = graphemes(_pipe);
-  let _pipe$2 = drop(_pipe$1, idx);
-  let _pipe$3 = take2(_pipe$2, len);
-  return concat2(_pipe$3);
-}
-function slice(string3, idx, len) {
-  let $ = len < 0;
-  if ($) {
-    return "";
-  } else {
-    let $1 = idx < 0;
-    if ($1) {
-      let translated_idx = length2(string3) + idx;
-      let $2 = translated_idx < 0;
-      if ($2) {
-        return "";
-      } else {
-        return do_slice(string3, translated_idx, len);
-      }
+// build/dev/javascript/gleam_stdlib/gleam/list.mjs
+function do_reverse(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
     } else {
-      return do_slice(string3, idx, len);
+      let item = remaining.head;
+      let rest$1 = remaining.tail;
+      loop$remaining = rest$1;
+      loop$accumulator = prepend(item, accumulator);
     }
   }
 }
-function drop_left(string3, num_graphemes) {
-  let $ = num_graphemes < 0;
-  if ($) {
-    return string3;
-  } else {
-    return slice(string3, num_graphemes, length2(string3) - num_graphemes);
+function reverse(xs) {
+  return do_reverse(xs, toList([]));
+}
+function do_filter(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      let new_acc = (() => {
+        let $ = fun(x);
+        if ($) {
+          return prepend(x, acc);
+        } else {
+          return acc;
+        }
+      })();
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = new_acc;
+    }
   }
+}
+function filter(list, predicate) {
+  return do_filter(list, predicate, toList([]));
+}
+function do_map(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = prepend(fun(x), acc);
+    }
+  }
+}
+function map(list, fun) {
+  return do_map(list, fun, toList([]));
+}
+function drop(loop$list, loop$n) {
+  while (true) {
+    let list = loop$list;
+    let n = loop$n;
+    let $ = n <= 0;
+    if ($) {
+      return list;
+    } else {
+      if (list.hasLength(0)) {
+        return toList([]);
+      } else {
+        let xs = list.tail;
+        loop$list = xs;
+        loop$n = n - 1;
+      }
+    }
+  }
+}
+function do_take(loop$list, loop$n, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let n = loop$n;
+    let acc = loop$acc;
+    let $ = n <= 0;
+    if ($) {
+      return reverse(acc);
+    } else {
+      if (list.hasLength(0)) {
+        return reverse(acc);
+      } else {
+        let x = list.head;
+        let xs = list.tail;
+        loop$list = xs;
+        loop$n = n - 1;
+        loop$acc = prepend(x, acc);
+      }
+    }
+  }
+}
+function take(list, n) {
+  return do_take(list, n, toList([]));
+}
+function reverse_and_prepend(loop$prefix, loop$suffix) {
+  while (true) {
+    let prefix = loop$prefix;
+    let suffix = loop$suffix;
+    if (prefix.hasLength(0)) {
+      return suffix;
+    } else {
+      let first$1 = prefix.head;
+      let rest$1 = prefix.tail;
+      loop$prefix = rest$1;
+      loop$suffix = prepend(first$1, suffix);
+    }
+  }
+}
+function do_concat(loop$lists, loop$acc) {
+  while (true) {
+    let lists = loop$lists;
+    let acc = loop$acc;
+    if (lists.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let list = lists.head;
+      let further_lists = lists.tail;
+      loop$lists = further_lists;
+      loop$acc = reverse_and_prepend(list, acc);
+    }
+  }
+}
+function concat(lists) {
+  return do_concat(lists, toList([]));
+}
+function flatten(lists) {
+  return do_concat(lists, toList([]));
+}
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list.head;
+      let rest$1 = list.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, x);
+      loop$fun = fun;
+    }
+  }
+}
+function do_index_fold(loop$over, loop$acc, loop$with, loop$index) {
+  while (true) {
+    let over = loop$over;
+    let acc = loop$acc;
+    let with$ = loop$with;
+    let index2 = loop$index;
+    if (over.hasLength(0)) {
+      return acc;
+    } else {
+      let first$1 = over.head;
+      let rest$1 = over.tail;
+      loop$over = rest$1;
+      loop$acc = with$(acc, first$1, index2);
+      loop$with = with$;
+      loop$index = index2 + 1;
+    }
+  }
+}
+function index_fold(over, initial, fun) {
+  return do_index_fold(over, initial, fun, 0);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
+function from_strings(strings) {
+  return concat2(strings);
+}
+function to_string3(builder) {
+  return identity(builder);
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -974,7 +1108,7 @@ function graphemes_iterator(string3) {
     return new Intl.Segmenter().segment(string3)[Symbol.iterator]();
   }
 }
-function concat(xs) {
+function concat2(xs) {
   let result = "";
   for (const x of xs) {
     result = result + x;
@@ -1056,182 +1190,67 @@ function keys(dict) {
   return do_keys(dict);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function do_reverse(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining.hasLength(0)) {
-      return accumulator;
-    } else {
-      let item = remaining.head;
-      let rest$1 = remaining.tail;
-      loop$remaining = rest$1;
-      loop$accumulator = prepend(item, accumulator);
-    }
-  }
+// build/dev/javascript/gleam_stdlib/gleam/string.mjs
+function length2(string3) {
+  return string_length(string3);
 }
-function reverse(xs) {
-  return do_reverse(xs, toList([]));
+function concat3(strings) {
+  let _pipe = strings;
+  let _pipe$1 = from_strings(_pipe);
+  return to_string3(_pipe$1);
 }
-function do_filter(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list.head;
-      let xs = list.tail;
-      let new_acc = (() => {
-        let $ = fun(x);
-        if ($) {
-          return prepend(x, acc);
-        } else {
-          return acc;
-        }
-      })();
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = new_acc;
-    }
-  }
+function do_slice(string3, idx, len) {
+  let _pipe = string3;
+  let _pipe$1 = graphemes(_pipe);
+  let _pipe$2 = drop(_pipe$1, idx);
+  let _pipe$3 = take(_pipe$2, len);
+  return concat3(_pipe$3);
 }
-function filter(list, predicate) {
-  return do_filter(list, predicate, toList([]));
-}
-function do_map(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list.head;
-      let xs = list.tail;
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = prepend(fun(x), acc);
-    }
-  }
-}
-function map(list, fun) {
-  return do_map(list, fun, toList([]));
-}
-function drop(loop$list, loop$n) {
-  while (true) {
-    let list = loop$list;
-    let n = loop$n;
-    let $ = n <= 0;
-    if ($) {
-      return list;
-    } else {
-      if (list.hasLength(0)) {
-        return toList([]);
+function slice(string3, idx, len) {
+  let $ = len < 0;
+  if ($) {
+    return "";
+  } else {
+    let $1 = idx < 0;
+    if ($1) {
+      let translated_idx = length2(string3) + idx;
+      let $2 = translated_idx < 0;
+      if ($2) {
+        return "";
       } else {
-        let xs = list.tail;
-        loop$list = xs;
-        loop$n = n - 1;
+        return do_slice(string3, translated_idx, len);
       }
-    }
-  }
-}
-function do_take(loop$list, loop$n, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let n = loop$n;
-    let acc = loop$acc;
-    let $ = n <= 0;
-    if ($) {
-      return reverse(acc);
     } else {
-      if (list.hasLength(0)) {
-        return reverse(acc);
-      } else {
-        let x = list.head;
-        let xs = list.tail;
-        loop$list = xs;
-        loop$n = n - 1;
-        loop$acc = prepend(x, acc);
-      }
+      return do_slice(string3, idx, len);
     }
   }
 }
-function take2(list, n) {
-  return do_take(list, n, toList([]));
-}
-function reverse_and_prepend(loop$prefix, loop$suffix) {
-  while (true) {
-    let prefix = loop$prefix;
-    let suffix = loop$suffix;
-    if (prefix.hasLength(0)) {
-      return suffix;
-    } else {
-      let first$1 = prefix.head;
-      let rest$1 = prefix.tail;
-      loop$prefix = rest$1;
-      loop$suffix = prepend(first$1, suffix);
-    }
+function drop_left(string3, num_graphemes) {
+  let $ = num_graphemes < 0;
+  if ($) {
+    return string3;
+  } else {
+    return slice(string3, num_graphemes, length2(string3) - num_graphemes);
   }
 }
-function do_concat(loop$lists, loop$acc) {
-  while (true) {
-    let lists = loop$lists;
-    let acc = loop$acc;
-    if (lists.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let list = lists.head;
-      let further_lists = lists.tail;
-      loop$lists = further_lists;
-      loop$acc = reverse_and_prepend(list, acc);
-    }
-  }
+
+// build/dev/javascript/gleam_json/gleam_json_ffi.mjs
+function object(entries) {
+  return Object.fromEntries(entries);
 }
-function concat3(lists) {
-  return do_concat(lists, toList([]));
+function identity2(x) {
+  return x;
 }
-function flatten(lists) {
-  return do_concat(lists, toList([]));
+
+// build/dev/javascript/gleam_json/gleam/json.mjs
+function string(input) {
+  return identity2(input);
 }
-function fold(loop$list, loop$initial, loop$fun) {
-  while (true) {
-    let list = loop$list;
-    let initial = loop$initial;
-    let fun = loop$fun;
-    if (list.hasLength(0)) {
-      return initial;
-    } else {
-      let x = list.head;
-      let rest$1 = list.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, x);
-      loop$fun = fun;
-    }
-  }
+function bool(input) {
+  return identity2(input);
 }
-function do_index_fold(loop$over, loop$acc, loop$with, loop$index) {
-  while (true) {
-    let over = loop$over;
-    let acc = loop$acc;
-    let with$ = loop$with;
-    let index2 = loop$index;
-    if (over.hasLength(0)) {
-      return acc;
-    } else {
-      let first$1 = over.head;
-      let rest$1 = over.tail;
-      loop$over = rest$1;
-      loop$acc = with$(acc, first$1, index2);
-      loop$with = with$;
-      loop$index = index2 + 1;
-    }
-  }
-}
-function index_fold(over, initial, fun) {
-  return do_index_fold(over, initial, fun, 0);
+function object2(entries) {
+  return object(entries);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -1250,6 +1269,20 @@ var Effect = class extends CustomType {
     this.all = all;
   }
 };
+function custom(run) {
+  return new Effect(
+    toList([
+      (actions) => {
+        return run(actions.dispatch, actions.emit, actions.select);
+      }
+    ])
+  );
+}
+function event(name, data) {
+  return custom((_, emit3, _1) => {
+    return emit3(name, data);
+  });
+}
 function none() {
   return new Effect(toList([]));
 }
@@ -1948,7 +1981,7 @@ var LustreClientApplication = class _LustreClientApplication {
     while (effects.length > 0) {
       const effect = effects.shift();
       const dispatch = (msg) => this.send(new Dispatch(msg));
-      const emit2 = (event2, data) => this.root.dispatchEvent(
+      const emit3 = (event2, data) => this.root.dispatchEvent(
         new CustomEvent(event2, {
           detail: data,
           bubbles: true,
@@ -1957,7 +1990,7 @@ var LustreClientApplication = class _LustreClientApplication {
       );
       const select = () => {
       };
-      effect({ dispatch, emit: emit2, select });
+      effect({ dispatch, emit: emit3, select });
     }
     if (this.#queue.length > 0) {
       return this.#flush(effects, didUpdate);
@@ -2062,7 +2095,7 @@ var LustreServerApplication = class _LustreServerApplication {
     while (effects.length > 0) {
       const effect = effects.shift();
       const dispatch = (msg) => this.send(new Dispatch(msg));
-      const emit2 = (event2, data) => this.root.dispatchEvent(
+      const emit3 = (event2, data) => this.root.dispatchEvent(
         new CustomEvent(event2, {
           detail: data,
           bubbles: true,
@@ -2071,7 +2104,7 @@ var LustreServerApplication = class _LustreServerApplication {
       );
       const select = () => {
       };
-      effect({ dispatch, emit: emit2, select });
+      effect({ dispatch, emit: emit3, select });
     }
     if (this.#queue.length > 0) {
       return this.#flush(didUpdate, effects);
@@ -2138,6 +2171,9 @@ function button(attrs, children2) {
 }
 
 // build/dev/javascript/lustre/lustre/event.mjs
+function emit2(event2, data) {
+  return event(event2, data);
+}
 function on2(name, handler) {
   return on(name, handler);
 }
@@ -2265,31 +2301,6 @@ function init2(_) {
     ])
   );
 }
-function update(model, msg) {
-  if (msg instanceof VideoRemoved) {
-    let cfb_game = msg[0];
-    return new Model2(
-      filter(model.games, (game) => {
-        return !isEqual(game, cfb_game);
-      })
-    );
-  } else {
-    let cfb_game = msg[0];
-    return new Model2(
-      concat3(
-        toList([
-          toList([new CfbGame(cfb_game.video_id, true, false)]),
-          filter(
-            model.games,
-            (game) => {
-              return !isEqual(game, cfb_game);
-            }
-          )
-        ])
-      )
-    );
-  }
-}
 function video_overlay_view(game) {
   let _pipe = new$5(
     new VideoFocused(game),
@@ -2324,7 +2335,7 @@ function video_view(game) {
 }
 function large_videos(games) {
   let important_game = (() => {
-    let $2 = take2(games, 1);
+    let $2 = take(games, 1);
     if ($2.atLeastLength(1)) {
       let game = $2.head;
       return game;
@@ -2402,6 +2413,41 @@ function video_panel(games) {
 function view3(model) {
   return video_panel(model.games);
 }
+function cfb_game_to_json(game) {
+  return object2(
+    toList([
+      ["video_id", string(game.video_id)],
+      ["autoplay", bool(game.autoplay)],
+      ["muted", bool(game.muted)]
+    ])
+  );
+}
+function update(model, msg) {
+  if (msg instanceof VideoRemoved) {
+    let cfb_game = msg[0];
+    return new Model2(
+      filter(model.games, (game) => {
+        return !isEqual(game, cfb_game);
+      })
+    );
+  } else {
+    let cfb_game = msg[0];
+    emit2("unmuteVideoCommand", cfb_game_to_json(cfb_game));
+    return new Model2(
+      concat(
+        toList([
+          toList([new CfbGame(cfb_game.video_id, true, false)]),
+          filter(
+            model.games,
+            (game) => {
+              return !isEqual(game, cfb_game);
+            }
+          )
+        ])
+      )
+    );
+  }
+}
 function main() {
   let app = simple(init2, update, view3);
   let $ = start2(app, "#app", void 0);
@@ -2409,7 +2455,7 @@ function main() {
     throw makeError(
       "let_assert",
       "cfb_watcher",
-      12,
+      13,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

@@ -1,5 +1,6 @@
 import components/ui/video
 import components/ui/video_overlay
+import gleam/json.{bool, object, string}
 import gleam/list
 import lustre
 import lustre/attribute
@@ -43,13 +44,15 @@ pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
     VideoRemoved(cfb_game) ->
       Model(games: list.filter(model.games, fn(game) { game != cfb_game }))
-    VideoFocused(cfb_game) ->
+    VideoFocused(cfb_game) -> {
+      event.emit("unmuteVideoCommand", cfb_game_to_json(cfb_game))
       Model(
         games: list.concat([
           [CfbGame(video_id: cfb_game.video_id, autoplay: True, muted: False)],
           list.filter(model.games, fn(game) { game != cfb_game }),
         ]),
       )
+    }
   }
 }
 
@@ -141,4 +144,12 @@ fn youtube_video_url(game: CfbGame) -> String {
   <> autoplay
   <> "&muted="
   <> mute
+}
+
+fn cfb_game_to_json(game: CfbGame) -> json.Json {
+  object([
+    #("video_id", string(game.video_id)),
+    #("autoplay", bool(game.autoplay)),
+    #("muted", bool(game.muted)),
+  ])
 }

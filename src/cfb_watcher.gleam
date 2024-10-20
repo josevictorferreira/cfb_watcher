@@ -1,6 +1,5 @@
 import components/ui/video
 import components/ui/video_overlay
-import gleam/json.{bool, object, string}
 import gleam/list
 import lustre
 import lustre/attribute
@@ -17,7 +16,7 @@ pub fn main() {
 
 fn init(_flags) -> Model {
   Model(games: [
-    CfbGame(video_id: "mjikSatnIOY", autoplay: True, muted: True),
+    CfbGame(video_id: "mjikSatnIOY", autoplay: True, muted: False),
     CfbGame(video_id: "LmAaCgp9YyE", autoplay: True, muted: True),
     CfbGame(video_id: "sPtP830hITs", autoplay: True, muted: True),
     CfbGame(video_id: "9FgQ6qvMePk", autoplay: True, muted: True),
@@ -36,22 +35,58 @@ pub type Model {
 }
 
 pub type Msg {
+  VideoPlayed(CfbGame)
+  VideoPaused(CfbGame)
+  VideoMuted(CfbGame)
+  VideoUnmuted(CfbGame)
   VideoFocused(CfbGame)
   VideoRemoved(CfbGame)
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
+    VideoPlayed(cfb_game) -> {
+      video.play(cfb_game.video_id)
+      Model(games: model.games)
+    }
+    VideoPaused(cfb_game) -> {
+      video.pause(cfb_game.video_id)
+      Model(games: model.games)
+    }
+    VideoMuted(cfb_game) -> {
+      video.mute(cfb_game.video_id)
+      Model(games: model.games)
+    }
+    VideoUnmuted(cfb_game) -> {
+      video.unmute(cfb_game.video_id)
+      Model(games: model.games)
+    }
     VideoRemoved(cfb_game) ->
       Model(games: list.filter(model.games, fn(game) { game != cfb_game }))
     VideoFocused(cfb_game) -> {
-      event.emit("unmuteVideoCommand", cfb_game_to_json(cfb_game))
-      Model(
-        games: list.concat([
-          [CfbGame(video_id: cfb_game.video_id, autoplay: True, muted: False)],
-          list.filter(model.games, fn(game) { game != cfb_game }),
-        ]),
-      )
+      let assert Ok(first_game) = list.first(model.games)
+      case first_game == cfb_game {
+        True -> {
+          video.unmute(first_game.video_id)
+          Model(games: model.games)
+        }
+        False -> {
+          video.mute(first_game.video_id)
+          video.unmute(cfb_game.video_id)
+          Model(
+            games: list.concat([
+              [
+                CfbGame(
+                  video_id: cfb_game.video_id,
+                  autoplay: True,
+                  muted: False,
+                ),
+              ],
+              list.filter(model.games, fn(game) { game != cfb_game }),
+            ]),
+          )
+        }
+      }
     }
   }
 }
@@ -116,15 +151,20 @@ fn small_videos(games: List(CfbGame)) -> element.Element(Msg) {
 }
 
 fn video_view(game: CfbGame) -> element.Element(Msg) {
-  youtube_video_url(game)
-  |> video.new
+  video.new(game.video_id, youtube_video_url(game))
   |> video.view
 }
 
 fn video_overlay_view(game: CfbGame) -> element.Element(Msg) {
-  video_overlay.new(VideoFocused(game), [event.on_click(VideoFocused(game))], [
-    event.on_click(VideoRemoved(game)),
-  ])
+  video_overlay.new(
+    VideoFocused(game),
+    [event.on_click(VideoPlayed(game))],
+    [event.on_click(VideoPaused(game))],
+    [event.on_click(VideoMuted(game))],
+    [event.on_click(VideoUnmuted(game))],
+    [event.on_click(VideoFocused(game))],
+    [event.on_click(VideoRemoved(game))],
+  )
   |> video_overlay.view
 }
 
@@ -140,16 +180,9 @@ fn youtube_video_url(game: CfbGame) -> String {
 
   "https://www.youtube.com/embed/"
   <> game.video_id
-  <> "?autoplay="
+  <> "?enablejsapi=1"
+  <> "&autoplay="
   <> autoplay
-  <> "&muted="
+  <> "&mute="
   <> mute
-}
-
-fn cfb_game_to_json(game: CfbGame) -> json.Json {
-  object([
-    #("video_id", string(game.video_id)),
-    #("autoplay", bool(game.autoplay)),
-    #("muted", bool(game.muted)),
-  ])
 }

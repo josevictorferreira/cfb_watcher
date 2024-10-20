@@ -190,190 +190,56 @@ function to_string2(x) {
   return to_string(x);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function do_reverse(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining.hasLength(0)) {
-      return accumulator;
-    } else {
-      let item = remaining.head;
-      let rest$1 = remaining.tail;
-      loop$remaining = rest$1;
-      loop$accumulator = prepend(item, accumulator);
-    }
-  }
-}
-function reverse(xs) {
-  return do_reverse(xs, toList([]));
-}
-function do_filter(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list.head;
-      let xs = list.tail;
-      let new_acc = (() => {
-        let $ = fun(x);
-        if ($) {
-          return prepend(x, acc);
-        } else {
-          return acc;
-        }
-      })();
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = new_acc;
-    }
-  }
-}
-function filter(list, predicate) {
-  return do_filter(list, predicate, toList([]));
-}
-function do_map(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list.head;
-      let xs = list.tail;
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = prepend(fun(x), acc);
-    }
-  }
-}
-function map(list, fun) {
-  return do_map(list, fun, toList([]));
-}
-function drop(loop$list, loop$n) {
-  while (true) {
-    let list = loop$list;
-    let n = loop$n;
-    let $ = n <= 0;
-    if ($) {
-      return list;
-    } else {
-      if (list.hasLength(0)) {
-        return toList([]);
-      } else {
-        let xs = list.tail;
-        loop$list = xs;
-        loop$n = n - 1;
-      }
-    }
-  }
-}
-function do_take(loop$list, loop$n, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let n = loop$n;
-    let acc = loop$acc;
-    let $ = n <= 0;
-    if ($) {
-      return reverse(acc);
-    } else {
-      if (list.hasLength(0)) {
-        return reverse(acc);
-      } else {
-        let x = list.head;
-        let xs = list.tail;
-        loop$list = xs;
-        loop$n = n - 1;
-        loop$acc = prepend(x, acc);
-      }
-    }
-  }
-}
-function take(list, n) {
-  return do_take(list, n, toList([]));
-}
-function reverse_and_prepend(loop$prefix, loop$suffix) {
-  while (true) {
-    let prefix = loop$prefix;
-    let suffix = loop$suffix;
-    if (prefix.hasLength(0)) {
-      return suffix;
-    } else {
-      let first$1 = prefix.head;
-      let rest$1 = prefix.tail;
-      loop$prefix = rest$1;
-      loop$suffix = prepend(first$1, suffix);
-    }
-  }
-}
-function do_concat(loop$lists, loop$acc) {
-  while (true) {
-    let lists = loop$lists;
-    let acc = loop$acc;
-    if (lists.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let list = lists.head;
-      let further_lists = lists.tail;
-      loop$lists = further_lists;
-      loop$acc = reverse_and_prepend(list, acc);
-    }
-  }
-}
-function concat(lists) {
-  return do_concat(lists, toList([]));
-}
-function flatten(lists) {
-  return do_concat(lists, toList([]));
-}
-function fold(loop$list, loop$initial, loop$fun) {
-  while (true) {
-    let list = loop$list;
-    let initial = loop$initial;
-    let fun = loop$fun;
-    if (list.hasLength(0)) {
-      return initial;
-    } else {
-      let x = list.head;
-      let rest$1 = list.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, x);
-      loop$fun = fun;
-    }
-  }
-}
-function do_index_fold(loop$over, loop$acc, loop$with, loop$index) {
-  while (true) {
-    let over = loop$over;
-    let acc = loop$acc;
-    let with$ = loop$with;
-    let index2 = loop$index;
-    if (over.hasLength(0)) {
-      return acc;
-    } else {
-      let first$1 = over.head;
-      let rest$1 = over.tail;
-      loop$over = rest$1;
-      loop$acc = with$(acc, first$1, index2);
-      loop$with = with$;
-      loop$index = index2 + 1;
-    }
-  }
-}
-function index_fold(over, initial, fun) {
-  return do_index_fold(over, initial, fun, 0);
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
 function from_strings(strings) {
-  return concat2(strings);
+  return concat(strings);
 }
 function to_string3(builder) {
   return identity(builder);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/string.mjs
+function length2(string3) {
+  return string_length(string3);
+}
+function concat2(strings) {
+  let _pipe = strings;
+  let _pipe$1 = from_strings(_pipe);
+  return to_string3(_pipe$1);
+}
+function do_slice(string3, idx, len) {
+  let _pipe = string3;
+  let _pipe$1 = graphemes(_pipe);
+  let _pipe$2 = drop(_pipe$1, idx);
+  let _pipe$3 = take2(_pipe$2, len);
+  return concat2(_pipe$3);
+}
+function slice(string3, idx, len) {
+  let $ = len < 0;
+  if ($) {
+    return "";
+  } else {
+    let $1 = idx < 0;
+    if ($1) {
+      let translated_idx = length2(string3) + idx;
+      let $2 = translated_idx < 0;
+      if ($2) {
+        return "";
+      } else {
+        return do_slice(string3, translated_idx, len);
+      }
+    } else {
+      return do_slice(string3, idx, len);
+    }
+  }
+}
+function drop_left(string3, num_graphemes) {
+  let $ = num_graphemes < 0;
+  if ($) {
+    return string3;
+  } else {
+    return slice(string3, num_graphemes, length2(string3) - num_graphemes);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -1108,7 +974,7 @@ function graphemes_iterator(string3) {
     return new Intl.Segmenter().segment(string3)[Symbol.iterator]();
   }
 }
-function concat2(xs) {
+function concat(xs) {
   let result = "";
   for (const x of xs) {
     result = result + x;
@@ -1190,67 +1056,190 @@ function keys(dict) {
   return do_keys(dict);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function length2(string3) {
-  return string_length(string3);
-}
-function concat3(strings) {
-  let _pipe = strings;
-  let _pipe$1 = from_strings(_pipe);
-  return to_string3(_pipe$1);
-}
-function do_slice(string3, idx, len) {
-  let _pipe = string3;
-  let _pipe$1 = graphemes(_pipe);
-  let _pipe$2 = drop(_pipe$1, idx);
-  let _pipe$3 = take(_pipe$2, len);
-  return concat3(_pipe$3);
-}
-function slice(string3, idx, len) {
-  let $ = len < 0;
-  if ($) {
-    return "";
-  } else {
-    let $1 = idx < 0;
-    if ($1) {
-      let translated_idx = length2(string3) + idx;
-      let $2 = translated_idx < 0;
-      if ($2) {
-        return "";
-      } else {
-        return do_slice(string3, translated_idx, len);
-      }
+// build/dev/javascript/gleam_stdlib/gleam/list.mjs
+function do_reverse(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
     } else {
-      return do_slice(string3, idx, len);
+      let item = remaining.head;
+      let rest$1 = remaining.tail;
+      loop$remaining = rest$1;
+      loop$accumulator = prepend(item, accumulator);
     }
   }
 }
-function drop_left(string3, num_graphemes) {
-  let $ = num_graphemes < 0;
-  if ($) {
-    return string3;
+function reverse(xs) {
+  return do_reverse(xs, toList([]));
+}
+function first(list) {
+  if (list.hasLength(0)) {
+    return new Error(void 0);
   } else {
-    return slice(string3, num_graphemes, length2(string3) - num_graphemes);
+    let x = list.head;
+    return new Ok(x);
   }
 }
-
-// build/dev/javascript/gleam_json/gleam_json_ffi.mjs
-function object(entries) {
-  return Object.fromEntries(entries);
+function do_filter(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      let new_acc = (() => {
+        let $ = fun(x);
+        if ($) {
+          return prepend(x, acc);
+        } else {
+          return acc;
+        }
+      })();
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = new_acc;
+    }
+  }
 }
-function identity2(x) {
-  return x;
+function filter(list, predicate) {
+  return do_filter(list, predicate, toList([]));
 }
-
-// build/dev/javascript/gleam_json/gleam/json.mjs
-function string(input) {
-  return identity2(input);
+function do_map(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = prepend(fun(x), acc);
+    }
+  }
 }
-function bool(input) {
-  return identity2(input);
+function map(list, fun) {
+  return do_map(list, fun, toList([]));
 }
-function object2(entries) {
-  return object(entries);
+function drop(loop$list, loop$n) {
+  while (true) {
+    let list = loop$list;
+    let n = loop$n;
+    let $ = n <= 0;
+    if ($) {
+      return list;
+    } else {
+      if (list.hasLength(0)) {
+        return toList([]);
+      } else {
+        let xs = list.tail;
+        loop$list = xs;
+        loop$n = n - 1;
+      }
+    }
+  }
+}
+function do_take(loop$list, loop$n, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let n = loop$n;
+    let acc = loop$acc;
+    let $ = n <= 0;
+    if ($) {
+      return reverse(acc);
+    } else {
+      if (list.hasLength(0)) {
+        return reverse(acc);
+      } else {
+        let x = list.head;
+        let xs = list.tail;
+        loop$list = xs;
+        loop$n = n - 1;
+        loop$acc = prepend(x, acc);
+      }
+    }
+  }
+}
+function take2(list, n) {
+  return do_take(list, n, toList([]));
+}
+function reverse_and_prepend(loop$prefix, loop$suffix) {
+  while (true) {
+    let prefix = loop$prefix;
+    let suffix = loop$suffix;
+    if (prefix.hasLength(0)) {
+      return suffix;
+    } else {
+      let first$1 = prefix.head;
+      let rest$1 = prefix.tail;
+      loop$prefix = rest$1;
+      loop$suffix = prepend(first$1, suffix);
+    }
+  }
+}
+function do_concat(loop$lists, loop$acc) {
+  while (true) {
+    let lists = loop$lists;
+    let acc = loop$acc;
+    if (lists.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let list = lists.head;
+      let further_lists = lists.tail;
+      loop$lists = further_lists;
+      loop$acc = reverse_and_prepend(list, acc);
+    }
+  }
+}
+function concat3(lists) {
+  return do_concat(lists, toList([]));
+}
+function flatten(lists) {
+  return do_concat(lists, toList([]));
+}
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list.head;
+      let rest$1 = list.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, x);
+      loop$fun = fun;
+    }
+  }
+}
+function do_index_fold(loop$over, loop$acc, loop$with, loop$index) {
+  while (true) {
+    let over = loop$over;
+    let acc = loop$acc;
+    let with$ = loop$with;
+    let index2 = loop$index;
+    if (over.hasLength(0)) {
+      return acc;
+    } else {
+      let first$1 = over.head;
+      let rest$1 = over.tail;
+      loop$over = rest$1;
+      loop$acc = with$(acc, first$1, index2);
+      loop$with = with$;
+      loop$index = index2 + 1;
+    }
+  }
+}
+function index_fold(over, initial, fun) {
+  return do_index_fold(over, initial, fun, 0);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -1269,20 +1258,6 @@ var Effect = class extends CustomType {
     this.all = all;
   }
 };
-function custom(run) {
-  return new Effect(
-    toList([
-      (actions) => {
-        return run(actions.dispatch, actions.emit, actions.select);
-      }
-    ])
-  );
-}
-function event(name, data) {
-  return custom((_, emit3, _1) => {
-    return emit3(name, data);
-  });
-}
 function none() {
   return new Effect(toList([]));
 }
@@ -1410,6 +1385,9 @@ function style(properties) {
 }
 function class$(name) {
   return attribute("class", name);
+}
+function id(name) {
+  return attribute("id", name);
 }
 function value(val) {
   return attribute("value", val);
@@ -1981,7 +1959,7 @@ var LustreClientApplication = class _LustreClientApplication {
     while (effects.length > 0) {
       const effect = effects.shift();
       const dispatch = (msg) => this.send(new Dispatch(msg));
-      const emit3 = (event2, data) => this.root.dispatchEvent(
+      const emit2 = (event2, data) => this.root.dispatchEvent(
         new CustomEvent(event2, {
           detail: data,
           bubbles: true,
@@ -1990,7 +1968,7 @@ var LustreClientApplication = class _LustreClientApplication {
       );
       const select = () => {
       };
-      effect({ dispatch, emit: emit3, select });
+      effect({ dispatch, emit: emit2, select });
     }
     if (this.#queue.length > 0) {
       return this.#flush(effects, didUpdate);
@@ -2095,7 +2073,7 @@ var LustreServerApplication = class _LustreServerApplication {
     while (effects.length > 0) {
       const effect = effects.shift();
       const dispatch = (msg) => this.send(new Dispatch(msg));
-      const emit3 = (event2, data) => this.root.dispatchEvent(
+      const emit2 = (event2, data) => this.root.dispatchEvent(
         new CustomEvent(event2, {
           detail: data,
           bubbles: true,
@@ -2104,7 +2082,7 @@ var LustreServerApplication = class _LustreServerApplication {
       );
       const select = () => {
       };
-      effect({ dispatch, emit: emit3, select });
+      effect({ dispatch, emit: emit2, select });
     }
     if (this.#queue.length > 0) {
       return this.#flush(didUpdate, effects);
@@ -2171,9 +2149,6 @@ function button(attrs, children2) {
 }
 
 // build/dev/javascript/lustre/lustre/event.mjs
-function emit2(event2, data) {
-  return event(event2, data);
-}
 function on2(name, handler) {
   return on(name, handler);
 }
@@ -2183,15 +2158,33 @@ function on_click(msg) {
   });
 }
 
+// build/dev/javascript/cfb_watcher/cfb_watcher_ffi.mjs
+function sendCommandToVideo(id2, command) {
+  var iframeVideo = document.getElementById(id2).contentWindow;
+  iframeVideo.postMessage(
+    '{"event":"command","func":"' + command + '","args":""}',
+    "*"
+  );
+}
+
 // build/dev/javascript/cfb_watcher/components/ui/video.mjs
 var VideoProps = class extends CustomType {
-  constructor(video_url) {
+  constructor(id2, video_url) {
     super();
+    this.id = id2;
     this.video_url = video_url;
   }
 };
-function new$4(video_url) {
-  return new VideoProps(video_url);
+var Play = class extends CustomType {
+};
+var Pause = class extends CustomType {
+};
+var Mute = class extends CustomType {
+};
+var UnMute = class extends CustomType {
+};
+function new$4(id2, video_url) {
+  return new VideoProps(id2, video_url);
 }
 function iframe_styles() {
   return style(
@@ -2207,41 +2200,90 @@ function iframe_styles() {
 function view(video_props) {
   return iframe(
     toList([
+      id(video_props.id),
       src(video_props.video_url),
       attribute("frameborder", "0"),
+      attribute("allow", "autoplay; encrypted-media"),
       attribute("allowfullscreen", "true"),
       iframe_styles()
     ])
   );
 }
+function video_commands_to_string(command) {
+  if (command instanceof Play) {
+    return "playVideo";
+  } else if (command instanceof Pause) {
+    return "pauseVideo";
+  } else if (command instanceof Mute) {
+    return "mute";
+  } else if (command instanceof UnMute) {
+    return "unMute";
+  } else {
+    return "stopVideo";
+  }
+}
+function video_command(id2, command) {
+  return sendCommandToVideo(id2, video_commands_to_string(command));
+}
+function play(id2) {
+  return video_command(id2, new Play());
+}
+function pause(id2) {
+  return video_command(id2, new Pause());
+}
+function mute(id2) {
+  return video_command(id2, new Mute());
+}
+function unmute(id2) {
+  return video_command(id2, new UnMute());
+}
 
 // build/dev/javascript/cfb_watcher/components/ui/video_overlay.mjs
 var VideoOverlayProps = class extends CustomType {
-  constructor(msg, focus_attributes, remove_attributes) {
+  constructor(msg, play_attributes, pause_attributes, mute_attributes, unmute_attributes, focus_attributes, remove_attributes) {
     super();
     this.msg = msg;
+    this.play_attributes = play_attributes;
+    this.pause_attributes = pause_attributes;
+    this.mute_attributes = mute_attributes;
+    this.unmute_attributes = unmute_attributes;
     this.focus_attributes = focus_attributes;
     this.remove_attributes = remove_attributes;
   }
 };
-function new$5(msg, focus_attributes, remove_attributes) {
-  return new VideoOverlayProps(msg, focus_attributes, remove_attributes);
+function new$5(msg, play_attributes, pause_attributes, mute_attributes, unmute_attributes, focus_attributes, remove_attributes) {
+  return new VideoOverlayProps(
+    msg,
+    play_attributes,
+    pause_attributes,
+    mute_attributes,
+    unmute_attributes,
+    focus_attributes,
+    remove_attributes
+  );
 }
 function view2(props) {
   return div(
     toList([class$("overlay")]),
     toList([
       button(
-        toList([value("play"), class$("overlay-button")]),
+        prepend(class$("overlay-button"), props.play_attributes),
         toList([text2("Play")])
       ),
       button(
-        toList([class$("overlay-button")]),
+        prepend(class$("overlay-button"), props.pause_attributes),
         toList([text2("Pause")])
       ),
       button(
-        toList([class$("overlay-button")]),
+        prepend(class$("overlay-button"), props.mute_attributes),
         toList([text2("Mute")])
+      ),
+      button(
+        prepend(
+          class$("overlay-button"),
+          props.unmute_attributes
+        ),
+        toList([text2("Unmute")])
       ),
       button(
         prepend(class$("overlay-button"), props.focus_attributes),
@@ -2276,6 +2318,30 @@ var Model2 = class extends CustomType {
     this.games = games;
   }
 };
+var VideoPlayed = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var VideoPaused = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var VideoMuted = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var VideoUnmuted = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
 var VideoFocused = class extends CustomType {
   constructor(x0) {
     super();
@@ -2291,7 +2357,7 @@ var VideoRemoved = class extends CustomType {
 function init2(_) {
   return new Model2(
     toList([
-      new CfbGame("mjikSatnIOY", true, true),
+      new CfbGame("mjikSatnIOY", true, false),
       new CfbGame("LmAaCgp9YyE", true, true),
       new CfbGame("sPtP830hITs", true, true),
       new CfbGame("9FgQ6qvMePk", true, true),
@@ -2301,9 +2367,74 @@ function init2(_) {
     ])
   );
 }
+function update(model, msg) {
+  if (msg instanceof VideoPlayed) {
+    let cfb_game = msg[0];
+    play(cfb_game.video_id);
+    return new Model2(model.games);
+  } else if (msg instanceof VideoPaused) {
+    let cfb_game = msg[0];
+    pause(cfb_game.video_id);
+    return new Model2(model.games);
+  } else if (msg instanceof VideoMuted) {
+    let cfb_game = msg[0];
+    mute(cfb_game.video_id);
+    return new Model2(model.games);
+  } else if (msg instanceof VideoUnmuted) {
+    let cfb_game = msg[0];
+    unmute(cfb_game.video_id);
+    return new Model2(model.games);
+  } else if (msg instanceof VideoRemoved) {
+    let cfb_game = msg[0];
+    return new Model2(
+      filter(model.games, (game) => {
+        return !isEqual(game, cfb_game);
+      })
+    );
+  } else {
+    let cfb_game = msg[0];
+    let $ = first(model.games);
+    if (!$.isOk()) {
+      throw makeError(
+        "let_assert",
+        "cfb_watcher",
+        67,
+        "update",
+        "Pattern match failed, no pattern matched the value.",
+        { value: $ }
+      );
+    }
+    let first_game = $[0];
+    let $1 = isEqual(first_game, cfb_game);
+    if ($1) {
+      unmute(first_game.video_id);
+      return new Model2(model.games);
+    } else {
+      mute(first_game.video_id);
+      unmute(cfb_game.video_id);
+      return new Model2(
+        concat3(
+          toList([
+            toList([new CfbGame(cfb_game.video_id, true, false)]),
+            filter(
+              model.games,
+              (game) => {
+                return !isEqual(game, cfb_game);
+              }
+            )
+          ])
+        )
+      );
+    }
+  }
+}
 function video_overlay_view(game) {
   let _pipe = new$5(
     new VideoFocused(game),
+    toList([on_click(new VideoPlayed(game))]),
+    toList([on_click(new VideoPaused(game))]),
+    toList([on_click(new VideoMuted(game))]),
+    toList([on_click(new VideoUnmuted(game))]),
     toList([on_click(new VideoFocused(game))]),
     toList([on_click(new VideoRemoved(game))])
   );
@@ -2318,7 +2449,7 @@ function youtube_video_url(game) {
       return "0";
     }
   })();
-  let mute = (() => {
+  let mute2 = (() => {
     let $ = game.muted;
     if ($) {
       return "1";
@@ -2326,16 +2457,15 @@ function youtube_video_url(game) {
       return "0";
     }
   })();
-  return "https://www.youtube.com/embed/" + game.video_id + "?autoplay=" + autoplay + "&muted=" + mute;
+  return "https://www.youtube.com/embed/" + game.video_id + "?enablejsapi=1&autoplay=" + autoplay + "&mute=" + mute2;
 }
 function video_view(game) {
-  let _pipe = youtube_video_url(game);
-  let _pipe$1 = new$4(_pipe);
-  return view(_pipe$1);
+  let _pipe = new$4(game.video_id, youtube_video_url(game));
+  return view(_pipe);
 }
 function large_videos(games) {
   let important_game = (() => {
-    let $2 = take(games, 1);
+    let $2 = take2(games, 1);
     if ($2.atLeastLength(1)) {
       let game = $2.head;
       return game;
@@ -2413,41 +2543,6 @@ function video_panel(games) {
 function view3(model) {
   return video_panel(model.games);
 }
-function cfb_game_to_json(game) {
-  return object2(
-    toList([
-      ["video_id", string(game.video_id)],
-      ["autoplay", bool(game.autoplay)],
-      ["muted", bool(game.muted)]
-    ])
-  );
-}
-function update(model, msg) {
-  if (msg instanceof VideoRemoved) {
-    let cfb_game = msg[0];
-    return new Model2(
-      filter(model.games, (game) => {
-        return !isEqual(game, cfb_game);
-      })
-    );
-  } else {
-    let cfb_game = msg[0];
-    emit2("unmuteVideoCommand", cfb_game_to_json(cfb_game));
-    return new Model2(
-      concat(
-        toList([
-          toList([new CfbGame(cfb_game.video_id, true, false)]),
-          filter(
-            model.games,
-            (game) => {
-              return !isEqual(game, cfb_game);
-            }
-          )
-        ])
-      )
-    );
-  }
-}
 function main() {
   let app = simple(init2, update, view3);
   let $ = start2(app, "#app", void 0);
@@ -2455,7 +2550,7 @@ function main() {
     throw makeError(
       "let_assert",
       "cfb_watcher",
-      13,
+      12,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

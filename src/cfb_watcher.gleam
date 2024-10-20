@@ -16,18 +16,18 @@ pub fn main() {
 
 fn init(_flags) -> Model {
   Model(games: [
-    CfbGame(video_id: "mjikSatnIOY", autoplay: True, muted: False),
-    CfbGame(video_id: "LmAaCgp9YyE", autoplay: True, muted: True),
-    CfbGame(video_id: "sPtP830hITs", autoplay: True, muted: True),
-    CfbGame(video_id: "9FgQ6qvMePk", autoplay: True, muted: True),
-    CfbGame(video_id: "PQ2r0sV1hUs", autoplay: True, muted: True),
-    CfbGame(video_id: "RBZ8FnSXfLs", autoplay: True, muted: True),
-    CfbGame(video_id: "7VjKEkqry6g", autoplay: True, muted: True),
+    CfbGame(video_id: "mjikSatnIOY"),
+    CfbGame(video_id: "LmAaCgp9YyE"),
+    CfbGame(video_id: "sPtP830hITs"),
+    CfbGame(video_id: "9FgQ6qvMePk"),
+    CfbGame(video_id: "PQ2r0sV1hUs"),
+    CfbGame(video_id: "RBZ8FnSXfLs"),
+    CfbGame(video_id: "7VjKEkqry6g"),
   ])
 }
 
 pub type CfbGame {
-  CfbGame(video_id: String, autoplay: Bool, muted: Bool)
+  CfbGame(video_id: String)
 }
 
 pub type Model {
@@ -35,32 +35,12 @@ pub type Model {
 }
 
 pub type Msg {
-  VideoPlayed(CfbGame)
-  VideoPaused(CfbGame)
-  VideoMuted(CfbGame)
-  VideoUnmuted(CfbGame)
   VideoFocused(CfbGame)
   VideoRemoved(CfbGame)
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
-    VideoPlayed(cfb_game) -> {
-      video.play(cfb_game.video_id)
-      Model(games: model.games)
-    }
-    VideoPaused(cfb_game) -> {
-      video.pause(cfb_game.video_id)
-      Model(games: model.games)
-    }
-    VideoMuted(cfb_game) -> {
-      video.mute(cfb_game.video_id)
-      Model(games: model.games)
-    }
-    VideoUnmuted(cfb_game) -> {
-      video.unmute(cfb_game.video_id)
-      Model(games: model.games)
-    }
     VideoRemoved(cfb_game) ->
       Model(games: list.filter(model.games, fn(game) { game != cfb_game }))
     VideoFocused(cfb_game) -> {
@@ -75,13 +55,7 @@ pub fn update(model: Model, msg: Msg) -> Model {
           video.unmute(cfb_game.video_id)
           Model(
             games: list.concat([
-              [
-                CfbGame(
-                  video_id: cfb_game.video_id,
-                  autoplay: True,
-                  muted: False,
-                ),
-              ],
+              [CfbGame(video_id: cfb_game.video_id)],
               list.filter(model.games, fn(game) { game != cfb_game }),
             ]),
           )
@@ -109,14 +83,14 @@ pub fn video_panel(games: List(CfbGame)) {
 fn large_videos(games: List(CfbGame)) -> element.Element(Msg) {
   let important_game: CfbGame = case list.take(games, 1) {
     [game, ..] -> game
-    [] -> CfbGame(video_id: "", autoplay: False, muted: False)
+    [] -> CfbGame(video_id: "")
   }
   case important_game.video_id == "" {
     True -> html.div([], [])
     False ->
       html.div(
         [attribute.class("video-container"), attribute.class("video-large")],
-        [video_view(important_game), video_overlay_view(important_game)],
+        [video_view(important_game, False), video_overlay_view(important_game)],
       )
   }
 }
@@ -131,7 +105,7 @@ fn medium_videos(games: List(CfbGame)) -> List(element.Element(Msg)) {
   list.map(medium_important_games, fn(game: CfbGame) -> element.Element(Msg) {
     html.div(
       [attribute.class("video-container"), attribute.class("video-medium")],
-      [video_view(game), video_overlay_view(game)],
+      [video_view(game, True), video_overlay_view(game)],
     )
   })
 }
@@ -143,37 +117,27 @@ fn small_videos(games: List(CfbGame)) -> element.Element(Msg) {
     [attribute.class("small-videos")],
     list.map(small_important_game, fn(game: CfbGame) {
       html.div([attribute.class("video-container")], [
-        video_view(game),
+        video_view(game, True),
         video_overlay_view(game),
       ])
     }),
   )
 }
 
-fn video_view(game: CfbGame) -> element.Element(Msg) {
-  video.new(game.video_id, youtube_video_url(game))
+fn video_view(game: CfbGame, muted: Bool) -> element.Element(Msg) {
+  video.new(game.video_id, youtube_video_url(game, muted))
   |> video.view
 }
 
 fn video_overlay_view(game: CfbGame) -> element.Element(Msg) {
-  video_overlay.new(
-    VideoFocused(game),
-    [event.on_click(VideoPlayed(game))],
-    [event.on_click(VideoPaused(game))],
-    [event.on_click(VideoMuted(game))],
-    [event.on_click(VideoUnmuted(game))],
-    [event.on_click(VideoFocused(game))],
-    [event.on_click(VideoRemoved(game))],
-  )
+  video_overlay.new(VideoFocused(game), [event.on_click(VideoFocused(game))], [
+    event.on_click(VideoRemoved(game)),
+  ])
   |> video_overlay.view
 }
 
-fn youtube_video_url(game: CfbGame) -> String {
-  let autoplay = case game.autoplay {
-    True -> "1"
-    False -> "0"
-  }
-  let mute = case game.muted {
+fn youtube_video_url(game: CfbGame, muted: Bool) -> String {
+  let mute = case muted {
     True -> "1"
     False -> "0"
   }
@@ -181,8 +145,7 @@ fn youtube_video_url(game: CfbGame) -> String {
   "https://www.youtube.com/embed/"
   <> game.video_id
   <> "?enablejsapi=1"
-  <> "&autoplay="
-  <> autoplay
+  <> "&autoplay=1"
   <> "&mute="
   <> mute
 }

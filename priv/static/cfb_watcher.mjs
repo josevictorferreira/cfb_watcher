@@ -84,9 +84,9 @@ var Result = class _Result extends CustomType {
   }
 };
 var Ok = class extends Result {
-  constructor(value2) {
+  constructor(value) {
     super();
-    this[0] = value2;
+    this[0] = value;
   }
   // @internal
   isOk() {
@@ -169,11 +169,11 @@ function structurallyCompatibleObjects(a, b) {
     return false;
   return a.constructor === b.constructor;
 }
-function makeError(variant, module, line, fn, message, extra) {
+function makeError(variant, module, line2, fn, message, extra) {
   let error = new globalThis.Error(message);
   error.gleam_error = variant;
   error.module = module;
-  error.line = line;
+  error.line = line2;
   error.function = fn;
   error.fn = fn;
   for (let k in extra)
@@ -1009,16 +1009,16 @@ function new_map() {
 function map_to_list(map4) {
   return List.fromArray(map4.entries());
 }
-function map_insert(key, value2, map4) {
-  return map4.set(key, value2);
+function map_insert(key, value, map4) {
+  return map4.set(key, value);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/dict.mjs
 function new$() {
   return new_map();
 }
-function insert(dict, key, value2) {
-  return map_insert(key, value2, dict);
+function insert(dict, key, value) {
+  return map_insert(key, value, dict);
 }
 function reverse_and_concat(loop$remaining, loop$accumulator) {
   while (true) {
@@ -1270,10 +1270,10 @@ var Text = class extends CustomType {
   }
 };
 var Element = class extends CustomType {
-  constructor(key, namespace, tag, attrs, children2, self_closing, void$) {
+  constructor(key, namespace2, tag, attrs, children2, self_closing, void$) {
     super();
     this.key = key;
-    this.namespace = namespace;
+    this.namespace = namespace2;
     this.tag = tag;
     this.attrs = attrs;
     this.children = children2;
@@ -1363,8 +1363,8 @@ function handlers(element2) {
 }
 
 // build/dev/javascript/lustre/lustre/attribute.mjs
-function attribute(name, value2) {
-  return new Attribute(name, identity(value2), false);
+function attribute(name, value) {
+  return new Attribute(name, identity(value), false);
 }
 function on(name, handler) {
   return new Event("on" + name, handler);
@@ -1388,9 +1388,6 @@ function class$(name) {
 }
 function id(name) {
   return attribute("id", name);
-}
-function value(val) {
-  return attribute("value", val);
 }
 function src(uri) {
   return attribute("src", uri);
@@ -1430,8 +1427,8 @@ function element(tag, attrs, children2) {
     return new Element("", "", tag, attrs, children2, false, false);
   }
 }
-function text(content) {
-  return new Text(content);
+function namespaced(namespace2, tag, attrs, children2) {
+  return new Element("", namespace2, tag, attrs, children2, false, false);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/set.mjs
@@ -1580,9 +1577,9 @@ function morph(prev, next, dispatch) {
   return out;
 }
 function createElementNode({ prev, next, dispatch, stack }) {
-  const namespace = next.namespace || "http://www.w3.org/1999/xhtml";
+  const namespace2 = next.namespace || "http://www.w3.org/1999/xhtml";
   const canMorph = prev && prev.nodeType === Node.ELEMENT_NODE && prev.localName === next.tag && prev.namespaceURI === (next.namespace || "http://www.w3.org/1999/xhtml");
-  const el = canMorph ? prev : namespace ? document.createElementNS(namespace, next.tag) : document.createElement(next.tag);
+  const el = canMorph ? prev : namespace2 ? document.createElementNS(namespace2, next.tag) : document.createElement(next.tag);
   let handlersForEl;
   if (!registeredHandlers.has(el)) {
     const emptyHandlers = /* @__PURE__ */ new Map();
@@ -1604,15 +1601,15 @@ function createElementNode({ prev, next, dispatch, stack }) {
   const delegated = [];
   for (const attr of next.attrs) {
     const name = attr[0];
-    const value2 = attr[1];
+    const value = attr[1];
     if (attr.as_property) {
-      if (el[name] !== value2)
-        el[name] = value2;
+      if (el[name] !== value)
+        el[name] = value;
       if (canMorph)
         prevAttributes.delete(name);
     } else if (name.startsWith("on")) {
       const eventName = name.slice(2);
-      const callback = dispatch(value2, eventName === "input");
+      const callback = dispatch(value, eventName === "input");
       if (!handlersForEl.has(eventName)) {
         el.addEventListener(eventName, lustreGenericEventHandler);
       }
@@ -1626,21 +1623,21 @@ function createElementNode({ prev, next, dispatch, stack }) {
         el.addEventListener(eventName, lustreGenericEventHandler);
       }
       handlersForEl.set(eventName, callback);
-      el.setAttribute(name, value2);
+      el.setAttribute(name, value);
     } else if (name.startsWith("delegate:data-") || name.startsWith("delegate:aria-")) {
-      el.setAttribute(name, value2);
-      delegated.push([name.slice(10), value2]);
+      el.setAttribute(name, value);
+      delegated.push([name.slice(10), value]);
     } else if (name === "class") {
-      className = className === null ? value2 : className + " " + value2;
+      className = className === null ? value : className + " " + value;
     } else if (name === "style") {
-      style2 = style2 === null ? value2 : style2 + value2;
+      style2 = style2 === null ? value : style2 + value;
     } else if (name === "dangerous-unescaped-html") {
-      innerHTML = value2;
+      innerHTML = value;
     } else {
-      if (el.getAttribute(name) !== value2)
-        el.setAttribute(name, value2);
+      if (el.getAttribute(name) !== value)
+        el.setAttribute(name, value);
       if (name === "value" || name === "selected")
-        el[name] = value2;
+        el[name] = value;
       if (canMorph)
         prevAttributes.delete(name);
     }
@@ -1667,9 +1664,9 @@ function createElementNode({ prev, next, dispatch, stack }) {
   if (next.tag === "slot") {
     window.queueMicrotask(() => {
       for (const child of el.assignedElements()) {
-        for (const [name, value2] of delegated) {
+        for (const [name, value] of delegated) {
           if (!child.hasAttribute(name)) {
-            child.setAttribute(name, value2);
+            child.setAttribute(name, value);
           }
         }
       }
@@ -1745,14 +1742,14 @@ function lustreServerEventHandler(event2) {
     tag,
     data: include.reduce(
       (data2, property) => {
-        const path = property.split(".");
-        for (let i = 0, o = data2, e = event2; i < path.length; i++) {
-          if (i === path.length - 1) {
-            o[path[i]] = e[path[i]];
+        const path2 = property.split(".");
+        for (let i = 0, o = data2, e = event2; i < path2.length; i++) {
+          if (i === path2.length - 1) {
+            o[path2[i]] = e[path2[i]];
           } else {
-            o[path[i]] ??= {};
-            e = e[path[i]];
-            o = o[path[i]];
+            o[path2[i]] ??= {};
+            e = e[path2[i]];
+            o = o[path2[i]];
           }
         }
         return data2;
@@ -2135,9 +2132,6 @@ function start2(app, selector, flags) {
 }
 
 // build/dev/javascript/lustre/lustre/element/html.mjs
-function text2(content) {
-  return text(content);
-}
 function div(attrs, children2) {
   return element("div", attrs, children2);
 }
@@ -2225,12 +2219,6 @@ function video_commands_to_string(command) {
 function video_command(id2, command) {
   return sendCommandToVideo(id2, video_commands_to_string(command));
 }
-function play(id2) {
-  return video_command(id2, new Play());
-}
-function pause(id2) {
-  return video_command(id2, new Pause());
-}
 function mute(id2) {
   return video_command(id2, new Mute());
 }
@@ -2238,66 +2226,137 @@ function unmute(id2) {
   return video_command(id2, new UnMute());
 }
 
+// build/dev/javascript/lustre/lustre/element/svg.mjs
+var namespace = "http://www.w3.org/2000/svg";
+function circle(attrs) {
+  return namespaced(namespace, "circle", attrs, toList([]));
+}
+function line(attrs) {
+  return namespaced(namespace, "line", attrs, toList([]));
+}
+function svg(attrs, children2) {
+  return namespaced(namespace, "svg", attrs, children2);
+}
+function path(attrs) {
+  return namespaced(namespace, "path", attrs, toList([]));
+}
+
+// build/dev/javascript/cfb_watcher/components/lucide_icons.mjs
+function focus(attributes) {
+  return svg(
+    prepend(
+      attribute("stroke-linejoin", "round"),
+      prepend(
+        attribute("stroke-linecap", "round"),
+        prepend(
+          attribute("stroke-width", "2"),
+          prepend(
+            attribute("stroke", "currentColor"),
+            prepend(
+              attribute("fill", "none"),
+              prepend(
+                attribute("viewBox", "0 0 24 24"),
+                prepend(
+                  attribute("height", "24"),
+                  prepend(attribute("width", "24"), attributes)
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    toList([
+      circle(
+        toList([
+          attribute("r", "3"),
+          attribute("cy", "12"),
+          attribute("cx", "12")
+        ])
+      ),
+      path(toList([attribute("d", "M3 7V5a2 2 0 0 1 2-2h2")])),
+      path(toList([attribute("d", "M17 3h2a2 2 0 0 1 2 2v2")])),
+      path(toList([attribute("d", "M21 17v2a2 2 0 0 1-2 2h-2")])),
+      path(toList([attribute("d", "M7 21H5a2 2 0 0 1-2-2v-2")]))
+    ])
+  );
+}
+function trash_2(attributes) {
+  return svg(
+    prepend(
+      attribute("stroke-linejoin", "round"),
+      prepend(
+        attribute("stroke-linecap", "round"),
+        prepend(
+          attribute("stroke-width", "2"),
+          prepend(
+            attribute("stroke", "currentColor"),
+            prepend(
+              attribute("fill", "none"),
+              prepend(
+                attribute("viewBox", "0 0 24 24"),
+                prepend(
+                  attribute("height", "24"),
+                  prepend(attribute("width", "24"), attributes)
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    toList([
+      path(toList([attribute("d", "M3 6h18")])),
+      path(
+        toList([attribute("d", "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6")])
+      ),
+      path(toList([attribute("d", "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2")])),
+      line(
+        toList([
+          attribute("y2", "17"),
+          attribute("y1", "11"),
+          attribute("x2", "10"),
+          attribute("x1", "10")
+        ])
+      ),
+      line(
+        toList([
+          attribute("y2", "17"),
+          attribute("y1", "11"),
+          attribute("x2", "14"),
+          attribute("x1", "14")
+        ])
+      )
+    ])
+  );
+}
+
 // build/dev/javascript/cfb_watcher/components/ui/video_overlay.mjs
 var VideoOverlayProps = class extends CustomType {
-  constructor(msg, play_attributes, pause_attributes, mute_attributes, unmute_attributes, focus_attributes, remove_attributes) {
+  constructor(msg, focus_attributes, remove_attributes) {
     super();
     this.msg = msg;
-    this.play_attributes = play_attributes;
-    this.pause_attributes = pause_attributes;
-    this.mute_attributes = mute_attributes;
-    this.unmute_attributes = unmute_attributes;
     this.focus_attributes = focus_attributes;
     this.remove_attributes = remove_attributes;
   }
 };
-function new$5(msg, play_attributes, pause_attributes, mute_attributes, unmute_attributes, focus_attributes, remove_attributes) {
-  return new VideoOverlayProps(
-    msg,
-    play_attributes,
-    pause_attributes,
-    mute_attributes,
-    unmute_attributes,
-    focus_attributes,
-    remove_attributes
-  );
+function new$5(msg, focus_attributes, remove_attributes) {
+  return new VideoOverlayProps(msg, focus_attributes, remove_attributes);
 }
 function view2(props) {
   return div(
     toList([class$("overlay")]),
     toList([
       button(
-        prepend(class$("overlay-button"), props.play_attributes),
-        toList([text2("Play")])
-      ),
-      button(
-        prepend(class$("overlay-button"), props.pause_attributes),
-        toList([text2("Pause")])
-      ),
-      button(
-        prepend(class$("overlay-button"), props.mute_attributes),
-        toList([text2("Mute")])
+        prepend(class$("overlay-button"), props.focus_attributes),
+        toList([focus(toList([]))])
       ),
       button(
         prepend(
           class$("overlay-button"),
-          props.unmute_attributes
+          props.remove_attributes
         ),
-        toList([text2("Unmute")])
-      ),
-      button(
-        prepend(class$("overlay-button"), props.focus_attributes),
-        toList([text2("Focus")])
-      ),
-      button(
-        prepend(
-          value("removed"),
-          prepend(
-            class$("overlay-button"),
-            props.remove_attributes
-          )
-        ),
-        toList([text2("Remove")])
+        toList([trash_2(toList([]))])
       )
     ])
   );
@@ -2305,41 +2364,15 @@ function view2(props) {
 
 // build/dev/javascript/cfb_watcher/cfb_watcher.mjs
 var CfbGame = class extends CustomType {
-  constructor(video_id, autoplay, muted) {
+  constructor(video_id) {
     super();
     this.video_id = video_id;
-    this.autoplay = autoplay;
-    this.muted = muted;
   }
 };
 var Model2 = class extends CustomType {
   constructor(games) {
     super();
     this.games = games;
-  }
-};
-var VideoPlayed = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-var VideoPaused = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-var VideoMuted = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-var VideoUnmuted = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
   }
 };
 var VideoFocused = class extends CustomType {
@@ -2357,34 +2390,18 @@ var VideoRemoved = class extends CustomType {
 function init2(_) {
   return new Model2(
     toList([
-      new CfbGame("mjikSatnIOY", true, false),
-      new CfbGame("LmAaCgp9YyE", true, true),
-      new CfbGame("sPtP830hITs", true, true),
-      new CfbGame("9FgQ6qvMePk", true, true),
-      new CfbGame("PQ2r0sV1hUs", true, true),
-      new CfbGame("RBZ8FnSXfLs", true, true),
-      new CfbGame("7VjKEkqry6g", true, true)
+      new CfbGame("mjikSatnIOY"),
+      new CfbGame("LmAaCgp9YyE"),
+      new CfbGame("sPtP830hITs"),
+      new CfbGame("9FgQ6qvMePk"),
+      new CfbGame("PQ2r0sV1hUs"),
+      new CfbGame("RBZ8FnSXfLs"),
+      new CfbGame("7VjKEkqry6g")
     ])
   );
 }
 function update(model, msg) {
-  if (msg instanceof VideoPlayed) {
-    let cfb_game = msg[0];
-    play(cfb_game.video_id);
-    return new Model2(model.games);
-  } else if (msg instanceof VideoPaused) {
-    let cfb_game = msg[0];
-    pause(cfb_game.video_id);
-    return new Model2(model.games);
-  } else if (msg instanceof VideoMuted) {
-    let cfb_game = msg[0];
-    mute(cfb_game.video_id);
-    return new Model2(model.games);
-  } else if (msg instanceof VideoUnmuted) {
-    let cfb_game = msg[0];
-    unmute(cfb_game.video_id);
-    return new Model2(model.games);
-  } else if (msg instanceof VideoRemoved) {
+  if (msg instanceof VideoRemoved) {
     let cfb_game = msg[0];
     return new Model2(
       filter(model.games, (game) => {
@@ -2398,7 +2415,7 @@ function update(model, msg) {
       throw makeError(
         "let_assert",
         "cfb_watcher",
-        67,
+        47,
         "update",
         "Pattern match failed, no pattern matched the value.",
         { value: $ }
@@ -2415,7 +2432,7 @@ function update(model, msg) {
       return new Model2(
         concat3(
           toList([
-            toList([new CfbGame(cfb_game.video_id, true, false)]),
+            toList([new CfbGame(cfb_game.video_id)]),
             filter(
               model.games,
               (game) => {
@@ -2431,36 +2448,23 @@ function update(model, msg) {
 function video_overlay_view(game) {
   let _pipe = new$5(
     new VideoFocused(game),
-    toList([on_click(new VideoPlayed(game))]),
-    toList([on_click(new VideoPaused(game))]),
-    toList([on_click(new VideoMuted(game))]),
-    toList([on_click(new VideoUnmuted(game))]),
     toList([on_click(new VideoFocused(game))]),
     toList([on_click(new VideoRemoved(game))])
   );
   return view2(_pipe);
 }
-function youtube_video_url(game) {
-  let autoplay = (() => {
-    let $ = game.autoplay;
-    if ($) {
-      return "1";
-    } else {
-      return "0";
-    }
-  })();
+function youtube_video_url(game, muted) {
   let mute2 = (() => {
-    let $ = game.muted;
-    if ($) {
+    if (muted) {
       return "1";
     } else {
       return "0";
     }
   })();
-  return "https://www.youtube.com/embed/" + game.video_id + "?enablejsapi=1&autoplay=" + autoplay + "&mute=" + mute2;
+  return "https://www.youtube.com/embed/" + game.video_id + "?enablejsapi=1&autoplay=1&mute=" + mute2;
 }
-function video_view(game) {
-  let _pipe = new$4(game.video_id, youtube_video_url(game));
+function video_view(game, muted) {
+  let _pipe = new$4(game.video_id, youtube_video_url(game, muted));
   return view(_pipe);
 }
 function large_videos(games) {
@@ -2470,7 +2474,7 @@ function large_videos(games) {
       let game = $2.head;
       return game;
     } else {
-      return new CfbGame("", false, false);
+      return new CfbGame("");
     }
   })();
   let $ = important_game.video_id === "";
@@ -2482,7 +2486,10 @@ function large_videos(games) {
         class$("video-container"),
         class$("video-large")
       ]),
-      toList([video_view(important_game), video_overlay_view(important_game)])
+      toList([
+        video_view(important_game, false),
+        video_overlay_view(important_game)
+      ])
     );
   }
 }
@@ -2508,7 +2515,7 @@ function medium_videos(games) {
           class$("video-container"),
           class$("video-medium")
         ]),
-        toList([video_view(game), video_overlay_view(game)])
+        toList([video_view(game, true), video_overlay_view(game)])
       );
     }
   );
@@ -2522,7 +2529,7 @@ function small_videos(games) {
       (game) => {
         return div(
           toList([class$("video-container")]),
-          toList([video_view(game), video_overlay_view(game)])
+          toList([video_view(game, true), video_overlay_view(game)])
         );
       }
     )

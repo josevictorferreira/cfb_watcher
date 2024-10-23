@@ -1,7 +1,7 @@
 import lustre/attribute
 import lustre/element/html
 
-pub type VideoProps {
+pub opaque type VideoProps {
   VideoProps(id: String, video_url: String)
 }
 

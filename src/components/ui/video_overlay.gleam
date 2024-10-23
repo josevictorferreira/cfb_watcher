@@ -3,7 +3,7 @@ import lustre/attribute
 import lustre/element
 import lustre/element/html
 
-pub type VideoOverlayProps(msg) {
+pub opaque type VideoOverlayProps(msg) {
   VideoOverlayProps(
     msg: msg,
     focus_attributes: List(attribute.Attribute(msg)),

@@ -1,5 +1,7 @@
+import components/ui/curtain_button
 import components/ui/video
 import components/ui/video_overlay
+import gleam/io
 import gleam/list
 import lustre
 import lustre/attribute
@@ -26,21 +28,26 @@ fn init(_flags) -> Model {
   ])
 }
 
-pub type CfbGame {
+pub opaque type CfbGame {
   CfbGame(video_id: String)
 }
 
-pub type Model {
+pub opaque type Model {
   Model(games: List(CfbGame))
 }
 
-pub type Msg {
+pub opaque type Msg {
   VideoFocused(CfbGame)
   VideoRemoved(CfbGame)
+  UserAddVideo
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
+    UserAddVideo -> {
+      io.debug("User added a video")
+      Model(games: model.games)
+    }
     VideoRemoved(cfb_game) ->
       Model(games: list.filter(model.games, fn(game) { game != cfb_game }))
     VideoFocused(cfb_game) -> {
@@ -66,7 +73,10 @@ pub fn update(model: Model, msg: Msg) -> Model {
 }
 
 pub fn view(model: Model) -> element.Element(Msg) {
-  video_panel(model.games)
+  html.div([attribute.class("container")], [
+    curtain_button(),
+    video_panel(model.games),
+  ])
 }
 
 pub fn video_panel(games: List(CfbGame)) {
@@ -78,6 +88,11 @@ pub fn video_panel(games: List(CfbGame)) {
       [small_videos(games)],
     ]),
   )
+}
+
+fn curtain_button() -> element.Element(Msg) {
+  curtain_button.new(UserAddVideo, [event.on_click(UserAddVideo)])
+  |> curtain_button.view
 }
 
 fn large_videos(games: List(CfbGame)) -> element.Element(Msg) {

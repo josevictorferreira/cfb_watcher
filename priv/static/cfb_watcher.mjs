@@ -1570,20 +1570,6 @@ function attribute(name, value) {
 function on(name, handler) {
   return new Event("on" + name, handler);
 }
-function style(properties) {
-  return attribute(
-    "style",
-    fold(
-      properties,
-      "",
-      (styles, _use1) => {
-        let name$1 = _use1[0];
-        let value$1 = _use1[1];
-        return styles + name$1 + ":" + value$1 + ";";
-      }
-    )
-  );
-}
 function class$(name) {
   return attribute("class", name);
 }
@@ -1792,7 +1778,7 @@ function createElementNode({ prev, next, dispatch, stack }) {
   const prevHandlers = canMorph ? new Set(handlersForEl.keys()) : null;
   const prevAttributes = canMorph ? new Set(Array.from(prev.attributes, (a) => a.name)) : null;
   let className = null;
-  let style2 = null;
+  let style = null;
   let innerHTML = null;
   if (canMorph && next.tag === "textarea") {
     const innertText = next.children[Symbol.iterator]().next().value?.content;
@@ -1831,7 +1817,7 @@ function createElementNode({ prev, next, dispatch, stack }) {
     } else if (name === "class") {
       className = className === null ? value : className + " " + value;
     } else if (name === "style") {
-      style2 = style2 === null ? value : style2 + value;
+      style = style === null ? value : style + value;
     } else if (name === "dangerous-unescaped-html") {
       innerHTML = value;
     } else {
@@ -1848,8 +1834,8 @@ function createElementNode({ prev, next, dispatch, stack }) {
     if (canMorph)
       prevAttributes.delete("class");
   }
-  if (style2 !== null) {
-    el.setAttribute("style", style2);
+  if (style !== null) {
+    el.setAttribute("style", style);
     if (canMorph)
       prevAttributes.delete("style");
   }
@@ -2371,7 +2357,7 @@ function path(attrs) {
   return namespaced(namespace, "path", attrs, toList([]));
 }
 
-// build/dev/javascript/cfb_watcher/components/lucide_icons.mjs
+// build/dev/javascript/cfb_watcher/components/icons/lucide.mjs
 function focus(attributes) {
   return svg(
     prepend(
@@ -2498,7 +2484,12 @@ function circle_plus(attributes) {
   );
 }
 
-// build/dev/javascript/cfb_watcher/components/ui/curtain_button.mjs
+// build/dev/javascript/cfb_watcher/sketch/styles/components/curtain_button/curtain_button_styles.mjs
+var add_icon = "add-icon";
+var curtain_content = "curtain-content";
+var curtain_button = "curtain-button";
+
+// build/dev/javascript/cfb_watcher/components/curtain_button/curtain_button.mjs
 var CurtainButtonProps = class extends CustomType {
   constructor(msg, attributes) {
     super();
@@ -2511,13 +2502,16 @@ function new$4(msg, attributes) {
 }
 function view(props) {
   return div(
-    toList([class$("curtain-button")]),
+    toList([class$(curtain_button)]),
     toList([
       div(
-        prepend(class$("curtain-content"), props.attributes),
+        prepend(
+          class$(curtain_content),
+          props.attributes
+        ),
         toList([
           span(
-            toList([class$("add-icon")]),
+            toList([class$(add_icon)]),
             toList([circle_plus(toList([]))])
           )
         ])
@@ -2535,7 +2529,10 @@ function sendCommandToVideo(id2, command) {
   );
 }
 
-// build/dev/javascript/cfb_watcher/components/ui/video.mjs
+// build/dev/javascript/cfb_watcher/sketch/styles/components/video/video_styles.mjs
+var iframe_video = "iframe-video";
+
+// build/dev/javascript/cfb_watcher/components/video/video.mjs
 var VideoProps = class extends CustomType {
   constructor(id2, video_url) {
     super();
@@ -2554,26 +2551,15 @@ var UnMute = class extends CustomType {
 function new$5(id2, video_url) {
   return new VideoProps(id2, video_url);
 }
-function iframe_styles() {
-  return style(
-    toList([
-      ["position", "absolute"],
-      ["top", "0"],
-      ["left", "0"],
-      ["width", "100%"],
-      ["height", "100%"]
-    ])
-  );
-}
 function view2(video_props) {
   return iframe(
     toList([
+      class$(iframe_video),
       id(video_props.id),
       src(video_props.video_url),
       attribute("frameborder", "0"),
       attribute("allow", "autoplay; encrypted-media"),
-      attribute("allowfullscreen", "true"),
-      iframe_styles()
+      attribute("allowfullscreen", "true")
     ])
   );
 }
@@ -2600,7 +2586,11 @@ function unmute(id2) {
   return video_command(id2, new UnMute());
 }
 
-// build/dev/javascript/cfb_watcher/components/ui/video_overlay.mjs
+// build/dev/javascript/cfb_watcher/sketch/styles/components/video_overlay/video_overlay_styles.mjs
+var overlay_button = "overlay-button";
+var overlay = "overlay";
+
+// build/dev/javascript/cfb_watcher/components/video_overlay/video_overlay.mjs
 var VideoOverlayProps = class extends CustomType {
   constructor(msg, focus_attributes, remove_attributes) {
     super();
@@ -2614,15 +2604,18 @@ function new$6(msg, focus_attributes, remove_attributes) {
 }
 function view3(props) {
   return div(
-    toList([class$("overlay")]),
+    toList([class$(overlay)]),
     toList([
       button(
-        prepend(class$("overlay-button"), props.focus_attributes),
+        prepend(
+          class$(overlay_button),
+          props.focus_attributes
+        ),
         toList([focus(toList([]))])
       ),
       button(
         prepend(
-          class$("overlay-button"),
+          class$(overlay_button),
           props.remove_attributes
         ),
         toList([trash_2(toList([]))])
@@ -2630,6 +2623,14 @@ function view3(props) {
     ])
   );
 }
+
+// build/dev/javascript/cfb_watcher/sketch/styles/cfb_watcher_styles.mjs
+var small_videos = "small-videos";
+var video_medium = "video-medium";
+var video_large = "video-large";
+var video_container = "video-container";
+var video_grid = "video-grid";
+var container = "container";
 
 // build/dev/javascript/cfb_watcher/cfb_watcher.mjs
 var CfbGame = class extends CustomType {
@@ -2689,7 +2690,7 @@ function update(model, msg) {
       throw makeError(
         "let_assert",
         "cfb_watcher",
-        54,
+        55,
         "update",
         "Pattern match failed, no pattern matched the value.",
         { value: $ }
@@ -2719,7 +2720,7 @@ function update(model, msg) {
     }
   }
 }
-function curtain_button() {
+function curtain_button2() {
   let _pipe = new$4(
     new UserAddVideo(),
     toList([on_click(new UserAddVideo())])
@@ -2764,8 +2765,8 @@ function large_videos(games) {
   } else {
     return div(
       toList([
-        class$("video-container"),
-        class$("video-large")
+        class$(video_container),
+        class$(video_large)
       ]),
       toList([
         video_view(important_game, false),
@@ -2793,23 +2794,23 @@ function medium_videos(games) {
     (game) => {
       return div(
         toList([
-          class$("video-container"),
-          class$("video-medium")
+          class$(video_container),
+          class$(video_medium)
         ]),
         toList([video_view(game, true), video_overlay_view(game)])
       );
     }
   );
 }
-function small_videos(games) {
+function small_videos2(games) {
   let small_important_game = drop(games, 3);
   return div(
-    toList([class$("small-videos")]),
+    toList([class$(small_videos)]),
     map(
       small_important_game,
       (game) => {
         return div(
-          toList([class$("video-container")]),
+          toList([class$(video_container)]),
           toList([video_view(game, true), video_overlay_view(game)])
         );
       }
@@ -2818,20 +2819,20 @@ function small_videos(games) {
 }
 function video_panel(games) {
   return div(
-    toList([class$("video-grid")]),
+    toList([class$(video_grid)]),
     flatten(
       toList([
         toList([large_videos(games)]),
         medium_videos(games),
-        toList([small_videos(games)])
+        toList([small_videos2(games)])
       ])
     )
   );
 }
 function view4(model) {
   return div(
-    toList([class$("container")]),
-    toList([curtain_button(), video_panel(model.games)])
+    toList([class$(container)]),
+    toList([curtain_button2(), video_panel(model.games)])
   );
 }
 function main() {
@@ -2841,7 +2842,7 @@ function main() {
     throw makeError(
       "let_assert",
       "cfb_watcher",
-      14,
+      15,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

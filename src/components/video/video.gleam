@@ -1,5 +1,6 @@
 import lustre/attribute
 import lustre/element/html
+import sketch/styles/components/video/video_styles as styles
 
 pub opaque type VideoProps {
   VideoProps(id: String, video_url: String)
@@ -19,22 +20,12 @@ pub type VideoCommands {
 
 pub fn view(video_props: VideoProps) {
   html.iframe([
+    attribute.class(styles.iframe_video),
     attribute.id(video_props.id),
     attribute.src(video_props.video_url),
     attribute.attribute("frameborder", "0"),
     attribute.attribute("allow", "autoplay; encrypted-media"),
     attribute.attribute("allowfullscreen", "true"),
-    iframe_styles(),
-  ])
-}
-
-fn iframe_styles() {
-  attribute.style([
-    #("position", "absolute"),
-    #("top", "0"),
-    #("left", "0"),
-    #("width", "100%"),
-    #("height", "100%"),
   ])
 }
 

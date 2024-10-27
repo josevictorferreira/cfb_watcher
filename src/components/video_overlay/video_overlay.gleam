@@ -1,7 +1,8 @@
-import components/lucide_icons
+import components/icons/lucide
 import lustre/attribute
 import lustre/element
 import lustre/element/html
+import sketch/styles/components/video_overlay/video_overlay_styles as styles
 
 pub opaque type VideoOverlayProps(msg) {
   VideoOverlayProps(
@@ -16,12 +17,14 @@ pub fn new(msg, focus_attributes, remove_attributes) -> VideoOverlayProps(msg) {
 }
 
 pub fn view(props: VideoOverlayProps(msg)) -> element.Element(msg) {
-  html.div([attribute.class("overlay")], [
-    html.button([attribute.class("overlay-button"), ..props.focus_attributes], [
-      lucide_icons.focus([]),
-    ]),
-    html.button([attribute.class("overlay-button"), ..props.remove_attributes], [
-      lucide_icons.trash_2([]),
-    ]),
+  html.div([attribute.class(styles.overlay)], [
+    html.button(
+      [attribute.class(styles.overlay_button), ..props.focus_attributes],
+      [lucide.focus([])],
+    ),
+    html.button(
+      [attribute.class(styles.overlay_button), ..props.remove_attributes],
+      [lucide.trash_2([])],
+    ),
   ])
 }

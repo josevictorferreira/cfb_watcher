@@ -1,0 +1,28 @@
+.overlay {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100percent;
+  height: 100percent;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.0;
+  transition: opacity 0.3s ease;
+}
+
+.overlay:hover {
+  opacity: 1.0;
+}
+
+.overlay-button {
+  background-color: #ffffff;
+  color: #000000;
+  border: none;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+}

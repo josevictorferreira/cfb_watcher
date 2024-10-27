@@ -1,6 +1,6 @@
-import components/ui/curtain_button
-import components/ui/video
-import components/ui/video_overlay
+import components/curtain_button/curtain_button
+import components/video/video
+import components/video_overlay/video_overlay
 import gleam/io
 import gleam/list
 import lustre
@@ -8,6 +8,7 @@ import lustre/attribute
 import lustre/element
 import lustre/element/html
 import lustre/event
+import sketch/styles/cfb_watcher_styles as styles
 
 pub fn main() {
   let app = lustre.simple(init, update, view)
@@ -73,7 +74,7 @@ pub fn update(model: Model, msg: Msg) -> Model {
 }
 
 pub fn view(model: Model) -> element.Element(Msg) {
-  html.div([attribute.class("container")], [
+  html.div([attribute.class(styles.container)], [
     curtain_button(),
     video_panel(model.games),
   ])
@@ -81,7 +82,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
 
 pub fn video_panel(games: List(CfbGame)) {
   html.div(
-    [attribute.class("video-grid")],
+    [attribute.class(styles.video_grid)],
     list.flatten([
       [large_videos(games)],
       medium_videos(games),
@@ -104,7 +105,10 @@ fn large_videos(games: List(CfbGame)) -> element.Element(Msg) {
     True -> html.div([], [])
     False ->
       html.div(
-        [attribute.class("video-container"), attribute.class("video-large")],
+        [
+          attribute.class(styles.video_container),
+          attribute.class(styles.video_large),
+        ],
         [video_view(important_game, False), video_overlay_view(important_game)],
       )
   }
@@ -119,7 +123,10 @@ fn medium_videos(games: List(CfbGame)) -> List(element.Element(Msg)) {
 
   list.map(medium_important_games, fn(game: CfbGame) -> element.Element(Msg) {
     html.div(
-      [attribute.class("video-container"), attribute.class("video-medium")],
+      [
+        attribute.class(styles.video_container),
+        attribute.class(styles.video_medium),
+      ],
       [video_view(game, True), video_overlay_view(game)],
     )
   })
@@ -129,9 +136,9 @@ fn small_videos(games: List(CfbGame)) -> element.Element(Msg) {
   let small_important_game = list.drop(games, 3)
 
   html.div(
-    [attribute.class("small-videos")],
+    [attribute.class(styles.small_videos)],
     list.map(small_important_game, fn(game: CfbGame) {
-      html.div([attribute.class("video-container")], [
+      html.div([attribute.class(styles.video_container)], [
         video_view(game, True),
         video_overlay_view(game),
       ])

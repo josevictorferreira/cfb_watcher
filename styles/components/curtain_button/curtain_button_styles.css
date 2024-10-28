@@ -18,8 +18,8 @@
 }
 
 .curtain-content {
-  width: 100percent;
-  height: 100percent;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;

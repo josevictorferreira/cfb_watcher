@@ -1,6 +1,6 @@
 .container {
   position: relative;
-  width: 100percent;
+  width: 100%;
   height: 100vh;
 }
 
@@ -23,8 +23,8 @@
 
 .video-container {
   position: relative;
-  width: 100percent;
-  height: 100percent;
+  width: 100%;
+  height: 100%;
 }
 
 .video-large {

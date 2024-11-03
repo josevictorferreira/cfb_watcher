@@ -29,6 +29,7 @@ fn init(_flags) -> Model {
       CfbGame(video_id: "7VjKEkqry6g"),
     ],
     command_dialog_visible: False,
+    command_dialog_value: "",
   )
 }
 
@@ -37,7 +38,11 @@ pub opaque type CfbGame {
 }
 
 pub opaque type Model {
-  Model(games: List(CfbGame), command_dialog_visible: Bool)
+  Model(
+    games: List(CfbGame),
+    command_dialog_visible: Bool,
+    command_dialog_value: String,
+  )
 }
 
 pub opaque type Msg {
@@ -45,37 +50,45 @@ pub opaque type Msg {
   VideoRemoved(CfbGame)
   UserOpenCommandDialog
   UserClosedCommandDialog
+  UserInputtedCommandDialog(String)
+  UserSubmitCommandDialog
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
+    UserInputtedCommandDialog(value) -> {
+      Model(..model, command_dialog_value: value)
+    }
+    UserSubmitCommandDialog -> {
+      Model(..model, command_dialog_visible: False)
+    }
     UserClosedCommandDialog -> {
-      Model(games: model.games, command_dialog_visible: False)
+      Model(..model, command_dialog_value: "", command_dialog_visible: False)
     }
     UserOpenCommandDialog -> {
-      Model(games: model.games, command_dialog_visible: True)
+      Model(..model, command_dialog_value: "", command_dialog_visible: True)
     }
     VideoRemoved(cfb_game) ->
       Model(
+        ..model,
         games: list.filter(model.games, fn(game) { game != cfb_game }),
-        command_dialog_visible: False,
       )
     VideoFocused(cfb_game) -> {
       let assert Ok(first_game) = list.first(model.games)
       case first_game == cfb_game {
         True -> {
           video.unmute(first_game.video_id)
-          Model(games: model.games, command_dialog_visible: False)
+          Model(..model, games: model.games)
         }
         False -> {
           video.mute(first_game.video_id)
           video.unmute(cfb_game.video_id)
           Model(
+            ..model,
             games: list.concat([
               [CfbGame(video_id: cfb_game.video_id)],
               list.filter(model.games, fn(game) { game != cfb_game }),
             ]),
-            command_dialog_visible: False,
           )
         }
       }
@@ -86,18 +99,19 @@ pub fn update(model: Model, msg: Msg) -> Model {
 pub fn view(model: Model) -> element.Element(Msg) {
   html.div([attribute.class(styles.container)], [
     curtain_button(),
-    command_dialog(model.command_dialog_visible),
+    command_dialog(model.command_dialog_visible, model.command_dialog_value),
     video_panel(model.games),
   ])
 }
 
-fn command_dialog(visible: Bool) {
+fn command_dialog(visible: Bool, input_value: String) {
   command_dialog.new(
     UserClosedCommandDialog,
     visible,
-    [],
+    input_value,
+    [event.on_click(UserSubmitCommandDialog)],
     [event.on_click(UserClosedCommandDialog)],
-    [],
+    [event.on_input(fn(value: String) { UserInputtedCommandDialog(value) })],
   )
   |> command_dialog.view
 }

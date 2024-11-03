@@ -6,6 +6,7 @@ pub opaque type CommandDialogProps(msg) {
   CommandDialogProps(
     msg,
     visible: Bool,
+    input_value: String,
     submit_attributes: List(attribute.Attribute(msg)),
     cancel_attributes: List(attribute.Attribute(msg)),
     input_attributes: List(attribute.Attribute(msg)),
@@ -15,6 +16,7 @@ pub opaque type CommandDialogProps(msg) {
 pub fn new(
   msg,
   visible: Bool,
+  input_value,
   submit_attributes: List(attribute.Attribute(msg)),
   cancel_attributes: List(attribute.Attribute(msg)),
   input_attributes: List(attribute.Attribute(msg)),
@@ -22,6 +24,7 @@ pub fn new(
   CommandDialogProps(
     msg,
     visible,
+    input_value,
     submit_attributes,
     cancel_attributes,
     input_attributes,
@@ -30,8 +33,8 @@ pub fn new(
 
 pub fn view(props: CommandDialogProps(msg)) {
   let visibility_classes = case props.visible {
-    True -> [attribute.class(styles.show), ..props.cancel_attributes]
-    False -> props.cancel_attributes
+    True -> [attribute.class(styles.show)]
+    False -> []
   }
 
   div(
@@ -42,7 +45,7 @@ pub fn view(props: CommandDialogProps(msg)) {
     ],
     [
       div([attribute.class(styles.command_dialog)], [
-        command_input_view(props.input_attributes),
+        command_input_view(props.input_value, props.input_attributes),
         command_dialog_button_view(
           props.submit_attributes,
           props.cancel_attributes,
@@ -52,13 +55,14 @@ pub fn view(props: CommandDialogProps(msg)) {
   )
 }
 
-fn command_input_view(input_attributes) {
+fn command_input_view(input_value, input_attributes) {
   div([attribute.style([#("display", "flex")]), ..input_attributes], [
     input([
+      attribute.autofocus(True),
+      attribute.value(input_value),
       attribute.class(styles.command_input),
       attribute.id(styles.command_input),
       attribute.placeholder("Enter command..."),
-      attribute.autofocus(True),
     ]),
   ])
 }

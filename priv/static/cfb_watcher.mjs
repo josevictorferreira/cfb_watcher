@@ -77,6 +77,70 @@ var NonEmpty = class extends List {
     this.tail = tail;
   }
 };
+var BitArray = class _BitArray {
+  constructor(buffer) {
+    if (!(buffer instanceof Uint8Array)) {
+      throw "BitArray can only be constructed from a Uint8Array";
+    }
+    this.buffer = buffer;
+  }
+  // @internal
+  get length() {
+    return this.buffer.length;
+  }
+  // @internal
+  byteAt(index2) {
+    return this.buffer[index2];
+  }
+  // @internal
+  floatFromSlice(start3, end, isBigEndian) {
+    return byteArrayToFloat(this.buffer, start3, end, isBigEndian);
+  }
+  // @internal
+  intFromSlice(start3, end, isBigEndian, isSigned) {
+    return byteArrayToInt(this.buffer, start3, end, isBigEndian, isSigned);
+  }
+  // @internal
+  binaryFromSlice(start3, end) {
+    return new _BitArray(this.buffer.slice(start3, end));
+  }
+  // @internal
+  sliceAfter(index2) {
+    return new _BitArray(this.buffer.slice(index2));
+  }
+};
+function byteArrayToInt(byteArray, start3, end, isBigEndian, isSigned) {
+  let value3 = 0;
+  if (isBigEndian) {
+    for (let i = start3; i < end; i++) {
+      value3 = value3 * 256 + byteArray[i];
+    }
+  } else {
+    for (let i = end - 1; i >= start3; i--) {
+      value3 = value3 * 256 + byteArray[i];
+    }
+  }
+  if (isSigned) {
+    const byteSize = end - start3;
+    const highBit = 2 ** (byteSize * 8 - 1);
+    if (value3 >= highBit) {
+      value3 -= highBit * 2;
+    }
+  }
+  return value3;
+}
+function byteArrayToFloat(byteArray, start3, end, isBigEndian) {
+  const view6 = new DataView(byteArray.buffer);
+  const byteSize = end - start3;
+  if (byteSize === 8) {
+    return view6.getFloat64(start3, !isBigEndian);
+  } else if (byteSize === 4) {
+    return view6.getFloat32(start3, !isBigEndian);
+  } else {
+    const msg = `Sized floats must be 32-bit or 64-bit on JavaScript, got size of ${byteSize * 8} bits`;
+    throw new globalThis.Error(msg);
+  }
+}
 var Result = class _Result extends CustomType {
   // @internal
   static isResult(data) {
@@ -84,9 +148,9 @@ var Result = class _Result extends CustomType {
   }
 };
 var Ok = class extends Result {
-  constructor(value) {
+  constructor(value3) {
     super();
-    this[0] = value;
+    this[0] = value3;
   }
   // @internal
   isOk() {
@@ -182,12 +246,55 @@ function makeError(variant, module, line2, fn, message, extra) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
+var Some = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
 var None = class extends CustomType {
 };
+function to_result(option, e) {
+  if (option instanceof Some) {
+    let a = option[0];
+    return new Ok(a);
+  } else {
+    return new Error(e);
+  }
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/int.mjs
 function to_string2(x) {
   return to_string(x);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(fun(x));
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
+}
+function map_error(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    let error = result[0];
+    return new Error(fun(error));
+  }
+}
+function try$(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
@@ -240,6 +347,91 @@ function drop_left(string3, num_graphemes) {
   } else {
     return slice(string3, num_graphemes, length2(string3) - num_graphemes);
   }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/dynamic.mjs
+var DecodeError = class extends CustomType {
+  constructor(expected, found, path2) {
+    super();
+    this.expected = expected;
+    this.found = found;
+    this.path = path2;
+  }
+};
+function classify(data) {
+  return classify_dynamic(data);
+}
+function int(data) {
+  return decode_int(data);
+}
+function any(decoders) {
+  return (data) => {
+    if (decoders.hasLength(0)) {
+      return new Error(
+        toList([new DecodeError("another type", classify(data), toList([]))])
+      );
+    } else {
+      let decoder = decoders.head;
+      let decoders$1 = decoders.tail;
+      let $ = decoder(data);
+      if ($.isOk()) {
+        let decoded = $[0];
+        return new Ok(decoded);
+      } else {
+        return any(decoders$1)(data);
+      }
+    }
+  };
+}
+function push_path(error, name) {
+  let name$1 = identity(name);
+  let decoder = any(
+    toList([string, (x) => {
+      return map(int(x), to_string2);
+    }])
+  );
+  let name$2 = (() => {
+    let $ = decoder(name$1);
+    if ($.isOk()) {
+      let name$22 = $[0];
+      return name$22;
+    } else {
+      let _pipe = toList(["<", classify(name$1), ">"]);
+      let _pipe$1 = from_strings(_pipe);
+      return to_string3(_pipe$1);
+    }
+  })();
+  return error.withFields({ path: prepend(name$2, error.path) });
+}
+function map_errors(result, f) {
+  return map_error(
+    result,
+    (_capture) => {
+      return map2(_capture, f);
+    }
+  );
+}
+function string(data) {
+  return decode_string(data);
+}
+function field(name, inner_type) {
+  return (value3) => {
+    let missing_field_error = new DecodeError("field", "nothing", toList([]));
+    return try$(
+      decode_field(value3, name),
+      (maybe_inner) => {
+        let _pipe = maybe_inner;
+        let _pipe$1 = to_result(_pipe, toList([missing_field_error]));
+        let _pipe$2 = try$(_pipe$1, inner_type);
+        return map_errors(
+          _pipe$2,
+          (_capture) => {
+            return push_path(_capture, name);
+          }
+        );
+      }
+    );
+  };
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -940,6 +1132,8 @@ var Dict = class _Dict {
 };
 
 // build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
+var Nil = void 0;
+var NOT_FOUND = {};
 function identity(x) {
   return x;
 }
@@ -1009,16 +1203,85 @@ function new_map() {
 function map_to_list(map4) {
   return List.fromArray(map4.entries());
 }
-function map_insert(key, value, map4) {
-  return map4.set(key, value);
+function map_get(map4, key) {
+  const value3 = map4.get(key, NOT_FOUND);
+  if (value3 === NOT_FOUND) {
+    return new Error(Nil);
+  }
+  return new Ok(value3);
+}
+function map_insert(key, value3, map4) {
+  return map4.set(key, value3);
+}
+function classify_dynamic(data) {
+  if (typeof data === "string") {
+    return "String";
+  } else if (typeof data === "boolean") {
+    return "Bool";
+  } else if (data instanceof Result) {
+    return "Result";
+  } else if (data instanceof List) {
+    return "List";
+  } else if (data instanceof BitArray) {
+    return "BitArray";
+  } else if (data instanceof Dict) {
+    return "Dict";
+  } else if (Number.isInteger(data)) {
+    return "Int";
+  } else if (Array.isArray(data)) {
+    return `Tuple of ${data.length} elements`;
+  } else if (typeof data === "number") {
+    return "Float";
+  } else if (data === null) {
+    return "Null";
+  } else if (data === void 0) {
+    return "Nil";
+  } else {
+    const type = typeof data;
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+}
+function decoder_error(expected, got) {
+  return decoder_error_no_classify(expected, classify_dynamic(got));
+}
+function decoder_error_no_classify(expected, got) {
+  return new Error(
+    List.fromArray([new DecodeError(expected, got, List.fromArray([]))])
+  );
+}
+function decode_string(data) {
+  return typeof data === "string" ? new Ok(data) : decoder_error("String", data);
+}
+function decode_int(data) {
+  return Number.isInteger(data) ? new Ok(data) : decoder_error("Int", data);
+}
+function decode_field(value3, name) {
+  const not_a_map_error = () => decoder_error("Dict", value3);
+  if (value3 instanceof Dict || value3 instanceof WeakMap || value3 instanceof Map) {
+    const entry = map_get(value3, name);
+    return new Ok(entry.isOk() ? new Some(entry[0]) : new None());
+  } else if (value3 === null) {
+    return not_a_map_error();
+  } else if (Object.getPrototypeOf(value3) == Object.prototype) {
+    return try_get_field(value3, name, () => new Ok(new None()));
+  } else {
+    return try_get_field(value3, name, not_a_map_error);
+  }
+}
+function try_get_field(value3, field2, or_else) {
+  try {
+    return field2 in value3 ? new Ok(new Some(value3[field2])) : or_else();
+  } catch {
+    return or_else();
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/dict.mjs
 function new$() {
   return new_map();
 }
-function insert(dict, key, value) {
-  return map_insert(key, value, dict);
+function insert(dict, key, value3) {
+  return map_insert(key, value3, dict);
 }
 function reverse_and_concat(loop$remaining, loop$accumulator) {
   while (true) {
@@ -1125,7 +1388,7 @@ function do_map(loop$list, loop$fun, loop$acc) {
     }
   }
 }
-function map(list, fun) {
+function map2(list, fun) {
   return do_map(list, fun, toList([]));
 }
 function drop(loop$list, loop$n) {
@@ -1363,11 +1626,11 @@ function handlers(element2) {
 }
 
 // build/dev/javascript/lustre/lustre/attribute.mjs
-function attribute(name, value) {
-  return new Attribute(name, identity(value), false);
+function attribute(name, value3) {
+  return new Attribute(name, identity(value3), false);
 }
-function property(name, value) {
-  return new Attribute(name, identity(value), true);
+function property(name, value3) {
+  return new Attribute(name, identity(value3), true);
 }
 function on(name, handler) {
   return new Event("on" + name, handler);
@@ -1391,6 +1654,9 @@ function class$(name) {
 }
 function id(name) {
   return attribute("id", name);
+}
+function value(val) {
+  return attribute("value", val);
 }
 function placeholder(text3) {
   return attribute("placeholder", text3);
@@ -1613,15 +1879,15 @@ function createElementNode({ prev, next, dispatch, stack }) {
   const delegated = [];
   for (const attr of next.attrs) {
     const name = attr[0];
-    const value = attr[1];
+    const value3 = attr[1];
     if (attr.as_property) {
-      if (el[name] !== value)
-        el[name] = value;
+      if (el[name] !== value3)
+        el[name] = value3;
       if (canMorph)
         prevAttributes.delete(name);
     } else if (name.startsWith("on")) {
       const eventName = name.slice(2);
-      const callback = dispatch(value, eventName === "input");
+      const callback = dispatch(value3, eventName === "input");
       if (!handlersForEl.has(eventName)) {
         el.addEventListener(eventName, lustreGenericEventHandler);
       }
@@ -1635,21 +1901,21 @@ function createElementNode({ prev, next, dispatch, stack }) {
         el.addEventListener(eventName, lustreGenericEventHandler);
       }
       handlersForEl.set(eventName, callback);
-      el.setAttribute(name, value);
+      el.setAttribute(name, value3);
     } else if (name.startsWith("delegate:data-") || name.startsWith("delegate:aria-")) {
-      el.setAttribute(name, value);
-      delegated.push([name.slice(10), value]);
+      el.setAttribute(name, value3);
+      delegated.push([name.slice(10), value3]);
     } else if (name === "class") {
-      className = className === null ? value : className + " " + value;
+      className = className === null ? value3 : className + " " + value3;
     } else if (name === "style") {
-      style2 = style2 === null ? value : style2 + value;
+      style2 = style2 === null ? value3 : style2 + value3;
     } else if (name === "dangerous-unescaped-html") {
-      innerHTML = value;
+      innerHTML = value3;
     } else {
-      if (el.getAttribute(name) !== value)
-        el.setAttribute(name, value);
+      if (el.getAttribute(name) !== value3)
+        el.setAttribute(name, value3);
       if (name === "value" || name === "selected")
-        el[name] = value;
+        el[name] = value3;
       if (canMorph)
         prevAttributes.delete(name);
     }
@@ -1676,9 +1942,9 @@ function createElementNode({ prev, next, dispatch, stack }) {
   if (next.tag === "slot") {
     window.queueMicrotask(() => {
       for (const child of el.assignedElements()) {
-        for (const [name, value] of delegated) {
+        for (const [name, value3] of delegated) {
           if (!child.hasAttribute(name)) {
-            child.setAttribute(name, value);
+            child.setAttribute(name, value3);
           }
         }
       }
@@ -2172,6 +2438,21 @@ function on_click(msg) {
     return new Ok(msg);
   });
 }
+function value2(event2) {
+  let _pipe = event2;
+  return field("target", field("value", string))(
+    _pipe
+  );
+}
+function on_input(msg) {
+  return on2(
+    "input",
+    (event2) => {
+      let _pipe = value2(event2);
+      return map(_pipe, msg);
+    }
+  );
+}
 
 // build/dev/javascript/cfb_watcher/sketch/styles/components/command_dialog/command_dialog_styles.mjs
 var show = "show";
@@ -2184,25 +2465,27 @@ var dialog_overlay = "dialog-overlay";
 
 // build/dev/javascript/cfb_watcher/components/command_dialog/command_dialog.mjs
 var CommandDialogProps = class extends CustomType {
-  constructor(x0, visible, submit_attributes, cancel_attributes, input_attributes) {
+  constructor(x0, visible, input_value, submit_attributes, cancel_attributes, input_attributes) {
     super();
     this[0] = x0;
     this.visible = visible;
+    this.input_value = input_value;
     this.submit_attributes = submit_attributes;
     this.cancel_attributes = cancel_attributes;
     this.input_attributes = input_attributes;
   }
 };
-function new$4(msg, visible, submit_attributes, cancel_attributes, input_attributes) {
+function new$4(msg, visible, input_value, submit_attributes, cancel_attributes, input_attributes) {
   return new CommandDialogProps(
     msg,
     visible,
+    input_value,
     submit_attributes,
     cancel_attributes,
     input_attributes
   );
 }
-function command_input_view(input_attributes) {
+function command_input_view(input_value, input_attributes) {
   return div(
     prepend(
       style(toList([["display", "flex"]])),
@@ -2211,10 +2494,11 @@ function command_input_view(input_attributes) {
     toList([
       input(
         toList([
+          autofocus(true),
+          value(input_value),
           class$(command_input),
           id(command_input),
-          placeholder("Enter command..."),
-          autofocus(true)
+          placeholder("Enter command...")
         ])
       )
     ])
@@ -2251,12 +2535,9 @@ function view(props) {
   let visibility_classes = (() => {
     let $ = props.visible;
     if ($) {
-      return prepend(
-        class$(show),
-        props.cancel_attributes
-      );
+      return toList([class$(show)]);
     } else {
-      return props.cancel_attributes;
+      return toList([]);
     }
   })();
   return div(
@@ -2268,7 +2549,7 @@ function view(props) {
       div(
         toList([class$(command_dialog)]),
         toList([
-          command_input_view(props.input_attributes),
+          command_input_view(props.input_value, props.input_attributes),
           command_dialog_button_view(
             props.submit_attributes,
             props.cancel_attributes
@@ -2577,10 +2858,11 @@ var CfbGame = class extends CustomType {
   }
 };
 var Model2 = class extends CustomType {
-  constructor(games, command_dialog_visible) {
+  constructor(games, command_dialog_visible, command_dialog_value) {
     super();
     this.games = games;
     this.command_dialog_visible = command_dialog_visible;
+    this.command_dialog_value = command_dialog_value;
   }
 };
 var VideoFocused = class extends CustomType {
@@ -2599,6 +2881,14 @@ var UserOpenCommandDialog = class extends CustomType {
 };
 var UserClosedCommandDialog = class extends CustomType {
 };
+var UserInputtedCommandDialog = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var UserSubmitCommandDialog = class extends CustomType {
+};
 function init2(_) {
   return new Model2(
     toList([
@@ -2610,22 +2900,36 @@ function init2(_) {
       new CfbGame("RBZ8FnSXfLs"),
       new CfbGame("7VjKEkqry6g")
     ]),
-    false
+    false,
+    ""
   );
 }
 function update(model, msg) {
-  if (msg instanceof UserClosedCommandDialog) {
-    return new Model2(model.games, false);
+  if (msg instanceof UserInputtedCommandDialog) {
+    let value3 = msg[0];
+    return model.withFields({ command_dialog_value: value3 });
+  } else if (msg instanceof UserSubmitCommandDialog) {
+    return model.withFields({ command_dialog_visible: false });
+  } else if (msg instanceof UserClosedCommandDialog) {
+    return model.withFields({
+      command_dialog_value: "",
+      command_dialog_visible: false
+    });
   } else if (msg instanceof UserOpenCommandDialog) {
-    return new Model2(model.games, true);
+    return model.withFields({
+      command_dialog_value: "",
+      command_dialog_visible: true
+    });
   } else if (msg instanceof VideoRemoved) {
     let cfb_game = msg[0];
-    return new Model2(
-      filter(model.games, (game) => {
-        return !isEqual(game, cfb_game);
-      }),
-      false
-    );
+    return model.withFields({
+      games: filter(
+        model.games,
+        (game) => {
+          return !isEqual(game, cfb_game);
+        }
+      )
+    });
   } else {
     let cfb_game = msg[0];
     let $ = first(model.games);
@@ -2633,7 +2937,7 @@ function update(model, msg) {
       throw makeError(
         "let_assert",
         "cfb_watcher",
-        64,
+        77,
         "update",
         "Pattern match failed, no pattern matched the value.",
         { value: $ }
@@ -2643,12 +2947,12 @@ function update(model, msg) {
     let $1 = isEqual(first_game, cfb_game);
     if ($1) {
       unmute(first_game.video_id);
-      return new Model2(model.games, false);
+      return model.withFields({ games: model.games });
     } else {
       mute(first_game.video_id);
       unmute(cfb_game.video_id);
-      return new Model2(
-        concat3(
+      return model.withFields({
+        games: concat3(
           toList([
             toList([new CfbGame(cfb_game.video_id)]),
             filter(
@@ -2658,19 +2962,25 @@ function update(model, msg) {
               }
             )
           ])
-        ),
-        false
-      );
+        )
+      });
     }
   }
 }
-function command_dialog2(visible) {
+function command_dialog2(visible, input_value) {
   let _pipe = new$4(
     new UserClosedCommandDialog(),
     visible,
-    toList([]),
+    input_value,
+    toList([on_click(new UserSubmitCommandDialog())]),
     toList([on_click(new UserClosedCommandDialog())]),
-    toList([])
+    toList([
+      on_input(
+        (value3) => {
+          return new UserInputtedCommandDialog(value3);
+        }
+      )
+    ])
   );
   return view(_pipe);
 }
@@ -2743,7 +3053,7 @@ function medium_videos(games) {
       return toList([]);
     }
   })();
-  return map(
+  return map2(
     medium_important_games,
     (game) => {
       return div(
@@ -2760,7 +3070,7 @@ function small_videos2(games) {
   let small_important_game = drop(games, 3);
   return div(
     toList([class$(small_videos)]),
-    map(
+    map2(
       small_important_game,
       (game) => {
         return div(
@@ -2788,7 +3098,7 @@ function view5(model) {
     toList([class$(container)]),
     toList([
       curtain_button2(),
-      command_dialog2(model.command_dialog_visible),
+      command_dialog2(model.command_dialog_visible, model.command_dialog_value),
       video_panel(model.games)
     ])
   );

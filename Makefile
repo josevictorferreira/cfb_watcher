@@ -1,4 +1,5 @@
 dev: ## Run dev environment
+	make gen_css
 	gleam run -m lustre/dev start
 
 gen_css: ## Generate css

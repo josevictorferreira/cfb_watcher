@@ -77,75 +77,6 @@ var NonEmpty = class extends List {
     this.tail = tail;
   }
 };
-var BitArray = class _BitArray {
-  constructor(buffer) {
-    if (!(buffer instanceof Uint8Array)) {
-      throw "BitArray can only be constructed from a Uint8Array";
-    }
-    this.buffer = buffer;
-  }
-  // @internal
-  get length() {
-    return this.buffer.length;
-  }
-  // @internal
-  byteAt(index2) {
-    return this.buffer[index2];
-  }
-  // @internal
-  floatFromSlice(start3, end, isBigEndian) {
-    return byteArrayToFloat(this.buffer, start3, end, isBigEndian);
-  }
-  // @internal
-  intFromSlice(start3, end, isBigEndian, isSigned) {
-    return byteArrayToInt(this.buffer, start3, end, isBigEndian, isSigned);
-  }
-  // @internal
-  binaryFromSlice(start3, end) {
-    return new _BitArray(this.buffer.slice(start3, end));
-  }
-  // @internal
-  sliceAfter(index2) {
-    return new _BitArray(this.buffer.slice(index2));
-  }
-};
-var UtfCodepoint = class {
-  constructor(value) {
-    this.value = value;
-  }
-};
-function byteArrayToInt(byteArray, start3, end, isBigEndian, isSigned) {
-  let value = 0;
-  if (isBigEndian) {
-    for (let i = start3; i < end; i++) {
-      value = value * 256 + byteArray[i];
-    }
-  } else {
-    for (let i = end - 1; i >= start3; i--) {
-      value = value * 256 + byteArray[i];
-    }
-  }
-  if (isSigned) {
-    const byteSize = end - start3;
-    const highBit = 2 ** (byteSize * 8 - 1);
-    if (value >= highBit) {
-      value -= highBit * 2;
-    }
-  }
-  return value;
-}
-function byteArrayToFloat(byteArray, start3, end, isBigEndian) {
-  const view5 = new DataView(byteArray.buffer);
-  const byteSize = end - start3;
-  if (byteSize === 8) {
-    return view5.getFloat64(start3, !isBigEndian);
-  } else if (byteSize === 4) {
-    return view5.getFloat32(start3, !isBigEndian);
-  } else {
-    const msg = `Sized floats must be 32-bit or 64-bit on JavaScript, got size of ${byteSize * 8} bits`;
-    throw new globalThis.Error(msg);
-  }
-}
 var Result = class _Result extends CustomType {
   // @internal
   static isResult(data) {
@@ -259,198 +190,56 @@ function to_string2(x) {
   return to_string(x);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function do_reverse(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining.hasLength(0)) {
-      return accumulator;
-    } else {
-      let item = remaining.head;
-      let rest$1 = remaining.tail;
-      loop$remaining = rest$1;
-      loop$accumulator = prepend(item, accumulator);
-    }
-  }
-}
-function reverse(xs) {
-  return do_reverse(xs, toList([]));
-}
-function first(list) {
-  if (list.hasLength(0)) {
-    return new Error(void 0);
-  } else {
-    let x = list.head;
-    return new Ok(x);
-  }
-}
-function do_filter(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list.head;
-      let xs = list.tail;
-      let new_acc = (() => {
-        let $ = fun(x);
-        if ($) {
-          return prepend(x, acc);
-        } else {
-          return acc;
-        }
-      })();
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = new_acc;
-    }
-  }
-}
-function filter(list, predicate) {
-  return do_filter(list, predicate, toList([]));
-}
-function do_map(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let x = list.head;
-      let xs = list.tail;
-      loop$list = xs;
-      loop$fun = fun;
-      loop$acc = prepend(fun(x), acc);
-    }
-  }
-}
-function map(list, fun) {
-  return do_map(list, fun, toList([]));
-}
-function drop(loop$list, loop$n) {
-  while (true) {
-    let list = loop$list;
-    let n = loop$n;
-    let $ = n <= 0;
-    if ($) {
-      return list;
-    } else {
-      if (list.hasLength(0)) {
-        return toList([]);
-      } else {
-        let xs = list.tail;
-        loop$list = xs;
-        loop$n = n - 1;
-      }
-    }
-  }
-}
-function do_take(loop$list, loop$n, loop$acc) {
-  while (true) {
-    let list = loop$list;
-    let n = loop$n;
-    let acc = loop$acc;
-    let $ = n <= 0;
-    if ($) {
-      return reverse(acc);
-    } else {
-      if (list.hasLength(0)) {
-        return reverse(acc);
-      } else {
-        let x = list.head;
-        let xs = list.tail;
-        loop$list = xs;
-        loop$n = n - 1;
-        loop$acc = prepend(x, acc);
-      }
-    }
-  }
-}
-function take(list, n) {
-  return do_take(list, n, toList([]));
-}
-function reverse_and_prepend(loop$prefix, loop$suffix) {
-  while (true) {
-    let prefix = loop$prefix;
-    let suffix = loop$suffix;
-    if (prefix.hasLength(0)) {
-      return suffix;
-    } else {
-      let first$1 = prefix.head;
-      let rest$1 = prefix.tail;
-      loop$prefix = rest$1;
-      loop$suffix = prepend(first$1, suffix);
-    }
-  }
-}
-function do_concat(loop$lists, loop$acc) {
-  while (true) {
-    let lists = loop$lists;
-    let acc = loop$acc;
-    if (lists.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let list = lists.head;
-      let further_lists = lists.tail;
-      loop$lists = further_lists;
-      loop$acc = reverse_and_prepend(list, acc);
-    }
-  }
-}
-function concat(lists) {
-  return do_concat(lists, toList([]));
-}
-function flatten(lists) {
-  return do_concat(lists, toList([]));
-}
-function fold(loop$list, loop$initial, loop$fun) {
-  while (true) {
-    let list = loop$list;
-    let initial = loop$initial;
-    let fun = loop$fun;
-    if (list.hasLength(0)) {
-      return initial;
-    } else {
-      let x = list.head;
-      let rest$1 = list.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, x);
-      loop$fun = fun;
-    }
-  }
-}
-function do_index_fold(loop$over, loop$acc, loop$with, loop$index) {
-  while (true) {
-    let over = loop$over;
-    let acc = loop$acc;
-    let with$ = loop$with;
-    let index2 = loop$index;
-    if (over.hasLength(0)) {
-      return acc;
-    } else {
-      let first$1 = over.head;
-      let rest$1 = over.tail;
-      loop$over = rest$1;
-      loop$acc = with$(acc, first$1, index2);
-      loop$with = with$;
-      loop$index = index2 + 1;
-    }
-  }
-}
-function index_fold(over, initial, fun) {
-  return do_index_fold(over, initial, fun, 0);
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/string_builder.mjs
 function from_strings(strings) {
-  return concat2(strings);
+  return concat(strings);
 }
 function to_string3(builder) {
   return identity(builder);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/string.mjs
+function length2(string3) {
+  return string_length(string3);
+}
+function concat2(strings) {
+  let _pipe = strings;
+  let _pipe$1 = from_strings(_pipe);
+  return to_string3(_pipe$1);
+}
+function do_slice(string3, idx, len) {
+  let _pipe = string3;
+  let _pipe$1 = graphemes(_pipe);
+  let _pipe$2 = drop(_pipe$1, idx);
+  let _pipe$3 = take2(_pipe$2, len);
+  return concat2(_pipe$3);
+}
+function slice(string3, idx, len) {
+  let $ = len < 0;
+  if ($) {
+    return "";
+  } else {
+    let $1 = idx < 0;
+    if ($1) {
+      let translated_idx = length2(string3) + idx;
+      let $2 = translated_idx < 0;
+      if ($2) {
+        return "";
+      } else {
+        return do_slice(string3, translated_idx, len);
+      }
+    } else {
+      return do_slice(string3, idx, len);
+    }
+  }
+}
+function drop_left(string3, num_graphemes) {
+  let $ = num_graphemes < 0;
+  if ($) {
+    return string3;
+  } else {
+    return slice(string3, num_graphemes, length2(string3) - num_graphemes);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -1185,7 +974,7 @@ function graphemes_iterator(string3) {
     return new Intl.Segmenter().segment(string3)[Symbol.iterator]();
   }
 }
-function concat2(xs) {
+function concat(xs) {
   let result = "";
   for (const x of xs) {
     result = result + x;
@@ -1214,15 +1003,6 @@ var unicode_whitespaces = [
 ].join("");
 var left_trim_regex = new RegExp(`^([${unicode_whitespaces}]*)`, "g");
 var right_trim_regex = new RegExp(`([${unicode_whitespaces}]*)$`, "g");
-function print_debug(string3) {
-  if (typeof process === "object" && process.stderr?.write) {
-    process.stderr.write(string3 + "\n");
-  } else if (typeof Deno === "object") {
-    Deno.stderr.writeSync(new TextEncoder().encode(string3 + "\n"));
-  } else {
-    console.log(string3);
-  }
-}
 function new_map() {
   return Dict.new();
 }
@@ -1231,117 +1011,6 @@ function map_to_list(map4) {
 }
 function map_insert(key, value, map4) {
   return map4.set(key, value);
-}
-function inspect(v) {
-  const t = typeof v;
-  if (v === true)
-    return "True";
-  if (v === false)
-    return "False";
-  if (v === null)
-    return "//js(null)";
-  if (v === void 0)
-    return "Nil";
-  if (t === "string")
-    return inspectString(v);
-  if (t === "bigint" || t === "number")
-    return v.toString();
-  if (Array.isArray(v))
-    return `#(${v.map(inspect).join(", ")})`;
-  if (v instanceof List)
-    return inspectList(v);
-  if (v instanceof UtfCodepoint)
-    return inspectUtfCodepoint(v);
-  if (v instanceof BitArray)
-    return inspectBitArray(v);
-  if (v instanceof CustomType)
-    return inspectCustomType(v);
-  if (v instanceof Dict)
-    return inspectDict(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(inspect).join(", ")}))`;
-  if (v instanceof RegExp)
-    return `//js(${v})`;
-  if (v instanceof Date)
-    return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return inspectObject(v);
-}
-function inspectString(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    switch (char) {
-      case "\n":
-        new_str += "\\n";
-        break;
-      case "\r":
-        new_str += "\\r";
-        break;
-      case "	":
-        new_str += "\\t";
-        break;
-      case "\f":
-        new_str += "\\f";
-        break;
-      case "\\":
-        new_str += "\\\\";
-        break;
-      case '"':
-        new_str += '\\"';
-        break;
-      default:
-        if (char < " " || char > "~" && char < "\xA0") {
-          new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-        } else {
-          new_str += char;
-        }
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function inspectDict(map4) {
-  let body = "dict.from_list([";
-  let first3 = true;
-  map4.forEach((value, key) => {
-    if (!first3)
-      body = body + ", ";
-    body = body + "#(" + inspect(key) + ", " + inspect(value) + ")";
-    first3 = false;
-  });
-  return body + "])";
-}
-function inspectObject(v) {
-  const name = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${inspect(k)}: ${inspect(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name === "Object" ? "" : name + " ";
-  return `//js(${head}{${body}})`;
-}
-function inspectCustomType(record) {
-  const props = Object.keys(record).map((label) => {
-    const value = inspect(record[label]);
-    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function inspectList(list) {
-  return `[${list.toArray().map(inspect).join(", ")}]`;
-}
-function inspectBitArray(bits) {
-  return `<<${Array.from(bits.buffer).join(", ")}>>`;
-}
-function inspectUtfCodepoint(codepoint2) {
-  return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/dict.mjs
@@ -1387,60 +1056,190 @@ function keys(dict) {
   return do_keys(dict);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function length2(string3) {
-  return string_length(string3);
-}
-function concat3(strings) {
-  let _pipe = strings;
-  let _pipe$1 = from_strings(_pipe);
-  return to_string3(_pipe$1);
-}
-function do_slice(string3, idx, len) {
-  let _pipe = string3;
-  let _pipe$1 = graphemes(_pipe);
-  let _pipe$2 = drop(_pipe$1, idx);
-  let _pipe$3 = take(_pipe$2, len);
-  return concat3(_pipe$3);
-}
-function slice(string3, idx, len) {
-  let $ = len < 0;
-  if ($) {
-    return "";
-  } else {
-    let $1 = idx < 0;
-    if ($1) {
-      let translated_idx = length2(string3) + idx;
-      let $2 = translated_idx < 0;
-      if ($2) {
-        return "";
-      } else {
-        return do_slice(string3, translated_idx, len);
-      }
+// build/dev/javascript/gleam_stdlib/gleam/list.mjs
+function do_reverse(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
     } else {
-      return do_slice(string3, idx, len);
+      let item = remaining.head;
+      let rest$1 = remaining.tail;
+      loop$remaining = rest$1;
+      loop$accumulator = prepend(item, accumulator);
     }
   }
 }
-function drop_left(string3, num_graphemes) {
-  let $ = num_graphemes < 0;
-  if ($) {
-    return string3;
+function reverse(xs) {
+  return do_reverse(xs, toList([]));
+}
+function first(list) {
+  if (list.hasLength(0)) {
+    return new Error(void 0);
   } else {
-    return slice(string3, num_graphemes, length2(string3) - num_graphemes);
+    let x = list.head;
+    return new Ok(x);
   }
 }
-function inspect2(term) {
-  let _pipe = inspect(term);
-  return to_string3(_pipe);
+function do_filter(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      let new_acc = (() => {
+        let $ = fun(x);
+        if ($) {
+          return prepend(x, acc);
+        } else {
+          return acc;
+        }
+      })();
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = new_acc;
+    }
+  }
 }
-
-// build/dev/javascript/gleam_stdlib/gleam/io.mjs
-function debug(term) {
-  let _pipe = term;
-  let _pipe$1 = inspect2(_pipe);
-  print_debug(_pipe$1);
-  return term;
+function filter(list, predicate) {
+  return do_filter(list, predicate, toList([]));
+}
+function do_map(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      loop$list = xs;
+      loop$fun = fun;
+      loop$acc = prepend(fun(x), acc);
+    }
+  }
+}
+function map(list, fun) {
+  return do_map(list, fun, toList([]));
+}
+function drop(loop$list, loop$n) {
+  while (true) {
+    let list = loop$list;
+    let n = loop$n;
+    let $ = n <= 0;
+    if ($) {
+      return list;
+    } else {
+      if (list.hasLength(0)) {
+        return toList([]);
+      } else {
+        let xs = list.tail;
+        loop$list = xs;
+        loop$n = n - 1;
+      }
+    }
+  }
+}
+function do_take(loop$list, loop$n, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let n = loop$n;
+    let acc = loop$acc;
+    let $ = n <= 0;
+    if ($) {
+      return reverse(acc);
+    } else {
+      if (list.hasLength(0)) {
+        return reverse(acc);
+      } else {
+        let x = list.head;
+        let xs = list.tail;
+        loop$list = xs;
+        loop$n = n - 1;
+        loop$acc = prepend(x, acc);
+      }
+    }
+  }
+}
+function take2(list, n) {
+  return do_take(list, n, toList([]));
+}
+function reverse_and_prepend(loop$prefix, loop$suffix) {
+  while (true) {
+    let prefix = loop$prefix;
+    let suffix = loop$suffix;
+    if (prefix.hasLength(0)) {
+      return suffix;
+    } else {
+      let first$1 = prefix.head;
+      let rest$1 = prefix.tail;
+      loop$prefix = rest$1;
+      loop$suffix = prepend(first$1, suffix);
+    }
+  }
+}
+function do_concat(loop$lists, loop$acc) {
+  while (true) {
+    let lists = loop$lists;
+    let acc = loop$acc;
+    if (lists.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let list = lists.head;
+      let further_lists = lists.tail;
+      loop$lists = further_lists;
+      loop$acc = reverse_and_prepend(list, acc);
+    }
+  }
+}
+function concat3(lists) {
+  return do_concat(lists, toList([]));
+}
+function flatten(lists) {
+  return do_concat(lists, toList([]));
+}
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list.head;
+      let rest$1 = list.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, x);
+      loop$fun = fun;
+    }
+  }
+}
+function do_index_fold(loop$over, loop$acc, loop$with, loop$index) {
+  while (true) {
+    let over = loop$over;
+    let acc = loop$acc;
+    let with$ = loop$with;
+    let index2 = loop$index;
+    if (over.hasLength(0)) {
+      return acc;
+    } else {
+      let first$1 = over.head;
+      let rest$1 = over.tail;
+      loop$over = rest$1;
+      loop$acc = with$(acc, first$1, index2);
+      loop$with = with$;
+      loop$index = index2 + 1;
+    }
+  }
+}
+function index_fold(over, initial, fun) {
+  return do_index_fold(over, initial, fun, 0);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -1567,14 +1366,37 @@ function handlers(element2) {
 function attribute(name, value) {
   return new Attribute(name, identity(value), false);
 }
+function property(name, value) {
+  return new Attribute(name, identity(value), true);
+}
 function on(name, handler) {
   return new Event("on" + name, handler);
+}
+function style(properties) {
+  return attribute(
+    "style",
+    fold(
+      properties,
+      "",
+      (styles, _use1) => {
+        let name$1 = _use1[0];
+        let value$1 = _use1[1];
+        return styles + name$1 + ":" + value$1 + ";";
+      }
+    )
+  );
 }
 function class$(name) {
   return attribute("class", name);
 }
 function id(name) {
   return attribute("id", name);
+}
+function placeholder(text3) {
+  return attribute("placeholder", text3);
+}
+function autofocus(should_autofocus) {
+  return property("autofocus", should_autofocus);
 }
 function src(uri) {
   return attribute("src", uri);
@@ -1616,6 +1438,9 @@ function element(tag, attrs, children2) {
 }
 function namespaced(namespace2, tag, attrs, children2) {
   return new Element("", namespace2, tag, attrs, children2, false, false);
+}
+function text(content) {
+  return new Text(content);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/set.mjs
@@ -1778,7 +1603,7 @@ function createElementNode({ prev, next, dispatch, stack }) {
   const prevHandlers = canMorph ? new Set(handlersForEl.keys()) : null;
   const prevAttributes = canMorph ? new Set(Array.from(prev.attributes, (a) => a.name)) : null;
   let className = null;
-  let style = null;
+  let style2 = null;
   let innerHTML = null;
   if (canMorph && next.tag === "textarea") {
     const innertText = next.children[Symbol.iterator]().next().value?.content;
@@ -1817,7 +1642,7 @@ function createElementNode({ prev, next, dispatch, stack }) {
     } else if (name === "class") {
       className = className === null ? value : className + " " + value;
     } else if (name === "style") {
-      style = style === null ? value : style + value;
+      style2 = style2 === null ? value : style2 + value;
     } else if (name === "dangerous-unescaped-html") {
       innerHTML = value;
     } else {
@@ -1834,8 +1659,8 @@ function createElementNode({ prev, next, dispatch, stack }) {
     if (canMorph)
       prevAttributes.delete("class");
   }
-  if (style !== null) {
-    el.setAttribute("style", style);
+  if (style2 !== null) {
+    el.setAttribute("style", style2);
     if (canMorph)
       prevAttributes.delete("style");
   }
@@ -1928,8 +1753,8 @@ function lustreServerEventHandler(event2) {
   return {
     tag,
     data: include.reduce(
-      (data2, property) => {
-        const path2 = property.split(".");
+      (data2, property2) => {
+        const path2 = property2.split(".");
         for (let i = 0, o = data2, e = event2; i < path2.length; i++) {
           if (i === path2.length - 1) {
             o[path2[i]] = e[path2[i]];
@@ -1979,9 +1804,9 @@ function diffKeyedChild(prevChild, child, el, stack, incomingKeyedChildren, keye
     return prevChild;
   }
   if (!keyedChild && prevChild !== null) {
-    const placeholder = document.createTextNode("");
-    el.insertBefore(placeholder, prevChild);
-    stack.unshift({ prev: placeholder, next: child, parent: el });
+    const placeholder2 = document.createTextNode("");
+    el.insertBefore(placeholder2, prevChild);
+    stack.unshift({ prev: placeholder2, next: child, parent: el });
     return prevChild;
   }
   if (!keyedChild || keyedChild === prevChild) {
@@ -2024,13 +1849,13 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {Gleam.Ok<(action: Lustre.Action<Lustre.Client, Msg>>) => void>}
    */
-  static start({ init: init3, update: update2, view: view5 }, selector, flags) {
+  static start({ init: init3, update: update2, view: view6 }, selector, flags) {
     if (!is_browser())
       return new Error(new NotABrowser());
     const root = selector instanceof HTMLElement ? selector : document.querySelector(selector);
     if (!root)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(root, init3(flags), update2, view5);
+    const app = new _LustreClientApplication(root, init3(flags), update2, view6);
     return new Ok((action) => app.send(action));
   }
   /**
@@ -2041,11 +1866,11 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {LustreClientApplication}
    */
-  constructor(root, [init3, effects], update2, view5) {
+  constructor(root, [init3, effects], update2, view6) {
     this.root = root;
     this.#model = init3;
     this.#update = update2;
-    this.#view = view5;
+    this.#view = view6;
     this.#tickScheduled = window.requestAnimationFrame(
       () => this.#tick(effects.all.toArray(), true)
     );
@@ -2163,20 +1988,20 @@ var LustreClientApplication = class _LustreClientApplication {
 };
 var start = LustreClientApplication.start;
 var LustreServerApplication = class _LustreServerApplication {
-  static start({ init: init3, update: update2, view: view5, on_attribute_change }, flags) {
+  static start({ init: init3, update: update2, view: view6, on_attribute_change }, flags) {
     const app = new _LustreServerApplication(
       init3(flags),
       update2,
-      view5,
+      view6,
       on_attribute_change
     );
     return new Ok((action) => app.send(action));
   }
-  constructor([model, effects], update2, view5, on_attribute_change) {
+  constructor([model, effects], update2, view6, on_attribute_change) {
     this.#model = model;
     this.#update = update2;
-    this.#view = view5;
-    this.#html = view5(model);
+    this.#view = view6;
+    this.#html = view6(model);
     this.#onAttributeChange = on_attribute_change;
     this.#renderers = /* @__PURE__ */ new Map();
     this.#handlers = handlers(this.#html);
@@ -2280,11 +2105,11 @@ var is_browser = () => globalThis.window && window.document;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init3, update2, view5, on_attribute_change) {
+  constructor(init3, update2, view6, on_attribute_change) {
     super();
     this.init = init3;
     this.update = update2;
-    this.view = view5;
+    this.view = view6;
     this.on_attribute_change = on_attribute_change;
   }
 };
@@ -2296,17 +2121,17 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init3, update2, view5) {
-  return new App(init3, update2, view5, new None());
+function application(init3, update2, view6) {
+  return new App(init3, update2, view6, new None());
 }
-function simple(init3, update2, view5) {
+function simple(init3, update2, view6) {
   let init$1 = (flags) => {
     return [init3(flags), none()];
   };
   let update$1 = (model, msg) => {
     return [update2(model, msg), none()];
   };
-  return application(init$1, update$1, view5);
+  return application(init$1, update$1, view6);
 }
 function start2(app, selector, flags) {
   return guard(
@@ -2319,6 +2144,9 @@ function start2(app, selector, flags) {
 }
 
 // build/dev/javascript/lustre/lustre/element/html.mjs
+function text2(content) {
+  return text(content);
+}
 function div(attrs, children2) {
   return element("div", attrs, children2);
 }
@@ -2331,6 +2159,9 @@ function iframe(attrs) {
 function button(attrs, children2) {
   return element("button", attrs, children2);
 }
+function input(attrs) {
+  return element("input", attrs, toList([]));
+}
 
 // build/dev/javascript/lustre/lustre/event.mjs
 function on2(name, handler) {
@@ -2340,6 +2171,112 @@ function on_click(msg) {
   return on2("click", (_) => {
     return new Ok(msg);
   });
+}
+
+// build/dev/javascript/cfb_watcher/sketch/styles/components/command_dialog/command_dialog_styles.mjs
+var show = "show";
+var cancel_button = "cancel-button";
+var submit_button = "submit-button";
+var command_dialog_button = "command-dialog-button";
+var command_input = "command-input";
+var command_dialog = "command-dialog";
+var dialog_overlay = "dialog-overlay";
+
+// build/dev/javascript/cfb_watcher/components/command_dialog/command_dialog.mjs
+var CommandDialogProps = class extends CustomType {
+  constructor(x0, visible, submit_attributes, cancel_attributes, input_attributes) {
+    super();
+    this[0] = x0;
+    this.visible = visible;
+    this.submit_attributes = submit_attributes;
+    this.cancel_attributes = cancel_attributes;
+    this.input_attributes = input_attributes;
+  }
+};
+function new$4(msg, visible, submit_attributes, cancel_attributes, input_attributes) {
+  return new CommandDialogProps(
+    msg,
+    visible,
+    submit_attributes,
+    cancel_attributes,
+    input_attributes
+  );
+}
+function command_input_view(input_attributes) {
+  return div(
+    prepend(
+      style(toList([["display", "flex"]])),
+      input_attributes
+    ),
+    toList([
+      input(
+        toList([
+          class$(command_input),
+          id(command_input),
+          placeholder("Enter command..."),
+          autofocus(true)
+        ])
+      )
+    ])
+  );
+}
+function command_dialog_button_view(submit_attributes, cancel_attributes) {
+  return div(
+    toList([style(toList([["text-align", "right"]]))]),
+    toList([
+      button(
+        prepend(
+          class$(command_dialog_button),
+          prepend(
+            class$(cancel_button),
+            cancel_attributes
+          )
+        ),
+        toList([text2("Cancel")])
+      ),
+      button(
+        prepend(
+          class$(command_dialog_button),
+          prepend(
+            class$(submit_button),
+            submit_attributes
+          )
+        ),
+        toList([text2("Submit")])
+      )
+    ])
+  );
+}
+function view(props) {
+  let visibility_classes = (() => {
+    let $ = props.visible;
+    if ($) {
+      return prepend(
+        class$(show),
+        props.cancel_attributes
+      );
+    } else {
+      return props.cancel_attributes;
+    }
+  })();
+  return div(
+    prepend(
+      class$(dialog_overlay),
+      prepend(id(dialog_overlay), visibility_classes)
+    ),
+    toList([
+      div(
+        toList([class$(command_dialog)]),
+        toList([
+          command_input_view(props.input_attributes),
+          command_dialog_button_view(
+            props.submit_attributes,
+            props.cancel_attributes
+          )
+        ])
+      )
+    ])
+  );
 }
 
 // build/dev/javascript/lustre/lustre/element/svg.mjs
@@ -2497,10 +2434,10 @@ var CurtainButtonProps = class extends CustomType {
     this.attributes = attributes;
   }
 };
-function new$4(msg, attributes) {
+function new$5(msg, attributes) {
   return new CurtainButtonProps(msg, attributes);
 }
-function view(props) {
+function view2(props) {
   return div(
     toList([class$(curtain_button)]),
     toList([
@@ -2548,10 +2485,10 @@ var Mute = class extends CustomType {
 };
 var UnMute = class extends CustomType {
 };
-function new$5(id2, video_url) {
+function new$6(id2, video_url) {
   return new VideoProps(id2, video_url);
 }
-function view2(video_props) {
+function view3(video_props) {
   return iframe(
     toList([
       class$(iframe_video),
@@ -2599,10 +2536,10 @@ var VideoOverlayProps = class extends CustomType {
     this.remove_attributes = remove_attributes;
   }
 };
-function new$6(msg, focus_attributes, remove_attributes) {
+function new$7(msg, focus_attributes, remove_attributes) {
   return new VideoOverlayProps(msg, focus_attributes, remove_attributes);
 }
-function view3(props) {
+function view4(props) {
   return div(
     toList([class$(overlay)]),
     toList([
@@ -2640,9 +2577,10 @@ var CfbGame = class extends CustomType {
   }
 };
 var Model2 = class extends CustomType {
-  constructor(games) {
+  constructor(games, command_dialog_visible) {
     super();
     this.games = games;
+    this.command_dialog_visible = command_dialog_visible;
   }
 };
 var VideoFocused = class extends CustomType {
@@ -2657,7 +2595,9 @@ var VideoRemoved = class extends CustomType {
     this[0] = x0;
   }
 };
-var UserAddVideo = class extends CustomType {
+var UserOpenCommandDialog = class extends CustomType {
+};
+var UserClosedCommandDialog = class extends CustomType {
 };
 function init2(_) {
   return new Model2(
@@ -2669,19 +2609,22 @@ function init2(_) {
       new CfbGame("PQ2r0sV1hUs"),
       new CfbGame("RBZ8FnSXfLs"),
       new CfbGame("7VjKEkqry6g")
-    ])
+    ]),
+    false
   );
 }
 function update(model, msg) {
-  if (msg instanceof UserAddVideo) {
-    debug("User added a video");
-    return new Model2(model.games);
+  if (msg instanceof UserClosedCommandDialog) {
+    return new Model2(model.games, false);
+  } else if (msg instanceof UserOpenCommandDialog) {
+    return new Model2(model.games, true);
   } else if (msg instanceof VideoRemoved) {
     let cfb_game = msg[0];
     return new Model2(
       filter(model.games, (game) => {
         return !isEqual(game, cfb_game);
-      })
+      }),
+      false
     );
   } else {
     let cfb_game = msg[0];
@@ -2690,7 +2633,7 @@ function update(model, msg) {
       throw makeError(
         "let_assert",
         "cfb_watcher",
-        55,
+        64,
         "update",
         "Pattern match failed, no pattern matched the value.",
         { value: $ }
@@ -2700,12 +2643,12 @@ function update(model, msg) {
     let $1 = isEqual(first_game, cfb_game);
     if ($1) {
       unmute(first_game.video_id);
-      return new Model2(model.games);
+      return new Model2(model.games, false);
     } else {
       mute(first_game.video_id);
       unmute(cfb_game.video_id);
       return new Model2(
-        concat(
+        concat3(
           toList([
             toList([new CfbGame(cfb_game.video_id)]),
             filter(
@@ -2715,25 +2658,36 @@ function update(model, msg) {
               }
             )
           ])
-        )
+        ),
+        false
       );
     }
   }
 }
-function curtain_button2() {
+function command_dialog2(visible) {
   let _pipe = new$4(
-    new UserAddVideo(),
-    toList([on_click(new UserAddVideo())])
+    new UserClosedCommandDialog(),
+    visible,
+    toList([]),
+    toList([on_click(new UserClosedCommandDialog())]),
+    toList([])
   );
   return view(_pipe);
 }
+function curtain_button2() {
+  let _pipe = new$5(
+    new UserOpenCommandDialog(),
+    toList([on_click(new UserOpenCommandDialog())])
+  );
+  return view2(_pipe);
+}
 function video_overlay_view(game) {
-  let _pipe = new$6(
+  let _pipe = new$7(
     new VideoFocused(game),
     toList([on_click(new VideoFocused(game))]),
     toList([on_click(new VideoRemoved(game))])
   );
-  return view3(_pipe);
+  return view4(_pipe);
 }
 function youtube_video_url(game, muted) {
   let mute2 = (() => {
@@ -2746,12 +2700,12 @@ function youtube_video_url(game, muted) {
   return "https://www.youtube.com/embed/" + game.video_id + "?enablejsapi=1&autoplay=1&mute=" + mute2;
 }
 function video_view(game, muted) {
-  let _pipe = new$5(game.video_id, youtube_video_url(game, muted));
-  return view2(_pipe);
+  let _pipe = new$6(game.video_id, youtube_video_url(game, muted));
+  return view3(_pipe);
 }
 function large_videos(games) {
   let important_game = (() => {
-    let $2 = take(games, 1);
+    let $2 = take2(games, 1);
     if ($2.atLeastLength(1)) {
       let game = $2.head;
       return game;
@@ -2829,14 +2783,18 @@ function video_panel(games) {
     )
   );
 }
-function view4(model) {
+function view5(model) {
   return div(
     toList([class$(container)]),
-    toList([curtain_button2(), video_panel(model.games)])
+    toList([
+      curtain_button2(),
+      command_dialog2(model.command_dialog_visible),
+      video_panel(model.games)
+    ])
   );
 }
 function main() {
-  let app = simple(init2, update, view4);
+  let app = simple(init2, update, view5);
   let $ = start2(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(

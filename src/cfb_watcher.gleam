@@ -1,7 +1,7 @@
+import components/command_dialog/command_dialog
 import components/curtain_button/curtain_button
 import components/video/video
 import components/video_overlay/video_overlay
-import gleam/io
 import gleam/list
 import lustre
 import lustre/attribute
@@ -18,15 +18,18 @@ pub fn main() {
 }
 
 fn init(_flags) -> Model {
-  Model(games: [
-    CfbGame(video_id: "mjikSatnIOY"),
-    CfbGame(video_id: "LmAaCgp9YyE"),
-    CfbGame(video_id: "sPtP830hITs"),
-    CfbGame(video_id: "9FgQ6qvMePk"),
-    CfbGame(video_id: "PQ2r0sV1hUs"),
-    CfbGame(video_id: "RBZ8FnSXfLs"),
-    CfbGame(video_id: "7VjKEkqry6g"),
-  ])
+  Model(
+    games: [
+      CfbGame(video_id: "mjikSatnIOY"),
+      CfbGame(video_id: "LmAaCgp9YyE"),
+      CfbGame(video_id: "sPtP830hITs"),
+      CfbGame(video_id: "9FgQ6qvMePk"),
+      CfbGame(video_id: "PQ2r0sV1hUs"),
+      CfbGame(video_id: "RBZ8FnSXfLs"),
+      CfbGame(video_id: "7VjKEkqry6g"),
+    ],
+    command_dialog_visible: False,
+  )
 }
 
 pub opaque type CfbGame {
@@ -34,29 +37,35 @@ pub opaque type CfbGame {
 }
 
 pub opaque type Model {
-  Model(games: List(CfbGame))
+  Model(games: List(CfbGame), command_dialog_visible: Bool)
 }
 
 pub opaque type Msg {
   VideoFocused(CfbGame)
   VideoRemoved(CfbGame)
-  UserAddVideo
+  UserOpenCommandDialog
+  UserClosedCommandDialog
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
-    UserAddVideo -> {
-      io.debug("User added a video")
-      Model(games: model.games)
+    UserClosedCommandDialog -> {
+      Model(games: model.games, command_dialog_visible: False)
+    }
+    UserOpenCommandDialog -> {
+      Model(games: model.games, command_dialog_visible: True)
     }
     VideoRemoved(cfb_game) ->
-      Model(games: list.filter(model.games, fn(game) { game != cfb_game }))
+      Model(
+        games: list.filter(model.games, fn(game) { game != cfb_game }),
+        command_dialog_visible: False,
+      )
     VideoFocused(cfb_game) -> {
       let assert Ok(first_game) = list.first(model.games)
       case first_game == cfb_game {
         True -> {
           video.unmute(first_game.video_id)
-          Model(games: model.games)
+          Model(games: model.games, command_dialog_visible: False)
         }
         False -> {
           video.mute(first_game.video_id)
@@ -66,6 +75,7 @@ pub fn update(model: Model, msg: Msg) -> Model {
               [CfbGame(video_id: cfb_game.video_id)],
               list.filter(model.games, fn(game) { game != cfb_game }),
             ]),
+            command_dialog_visible: False,
           )
         }
       }
@@ -76,11 +86,23 @@ pub fn update(model: Model, msg: Msg) -> Model {
 pub fn view(model: Model) -> element.Element(Msg) {
   html.div([attribute.class(styles.container)], [
     curtain_button(),
+    command_dialog(model.command_dialog_visible),
     video_panel(model.games),
   ])
 }
 
-pub fn video_panel(games: List(CfbGame)) {
+fn command_dialog(visible: Bool) {
+  command_dialog.new(
+    UserClosedCommandDialog,
+    visible,
+    [],
+    [event.on_click(UserClosedCommandDialog)],
+    [],
+  )
+  |> command_dialog.view
+}
+
+fn video_panel(games: List(CfbGame)) {
   html.div(
     [attribute.class(styles.video_grid)],
     list.flatten([
@@ -92,7 +114,9 @@ pub fn video_panel(games: List(CfbGame)) {
 }
 
 fn curtain_button() -> element.Element(Msg) {
-  curtain_button.new(UserAddVideo, [event.on_click(UserAddVideo)])
+  curtain_button.new(UserOpenCommandDialog, [
+    event.on_click(UserOpenCommandDialog),
+  ])
   |> curtain_button.view
 }
 

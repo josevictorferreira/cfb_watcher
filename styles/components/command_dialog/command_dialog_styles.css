@@ -1,0 +1,56 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 15vh;
+  z-index: 200;
+}
+
+.command-dialog {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 600px;
+}
+
+.command-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.command-dialog-button {
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.submit-button {
+  background-color: #333;
+  color: white;
+}
+
+.cancel-button {
+  background-color: #ccc;
+  color: #333;
+}
+
+.show {
+  display: flex !important;
+}

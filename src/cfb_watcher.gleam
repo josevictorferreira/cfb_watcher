@@ -5,31 +5,35 @@ import components/video_overlay/video_overlay
 import gleam/list
 import lustre
 import lustre/attribute
+import lustre/effect.{type Effect}
 import lustre/element
 import lustre/element/html
 import lustre/event
 import sketch/styles/cfb_watcher_styles as styles
 
 pub fn main() {
-  let app = lustre.simple(init, update, view)
+  let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 
   Nil
 }
 
-fn init(_flags) -> Model {
-  Model(
-    games: [
-      CfbGame(video_id: "mjikSatnIOY"),
-      CfbGame(video_id: "LmAaCgp9YyE"),
-      CfbGame(video_id: "sPtP830hITs"),
-      CfbGame(video_id: "9FgQ6qvMePk"),
-      CfbGame(video_id: "PQ2r0sV1hUs"),
-      CfbGame(video_id: "RBZ8FnSXfLs"),
-      CfbGame(video_id: "7VjKEkqry6g"),
-    ],
-    command_dialog_visible: False,
-    command_dialog_value: "",
+fn init(_flags) -> #(Model, Effect(Msg)) {
+  #(
+    Model(
+      games: [
+        CfbGame(video_id: "mjikSatnIOY"),
+        CfbGame(video_id: "LmAaCgp9YyE"),
+        CfbGame(video_id: "sPtP830hITs"),
+        CfbGame(video_id: "9FgQ6qvMePk"),
+        CfbGame(video_id: "PQ2r0sV1hUs"),
+        CfbGame(video_id: "RBZ8FnSXfLs"),
+        CfbGame(video_id: "7VjKEkqry6g"),
+      ],
+      command_dialog_visible: False,
+      command_dialog_value: "",
+    ),
+    effect.none(),
   )
 }
 
@@ -54,41 +58,52 @@ pub opaque type Msg {
   UserSubmitCommandDialog
 }
 
-pub fn update(model: Model, msg: Msg) -> Model {
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserInputtedCommandDialog(value) -> {
-      Model(..model, command_dialog_value: value)
+      #(Model(..model, command_dialog_value: value), effect.none())
     }
     UserSubmitCommandDialog -> {
-      Model(..model, command_dialog_visible: False)
+      #(Model(..model, command_dialog_visible: False), effect.none())
     }
     UserClosedCommandDialog -> {
-      Model(..model, command_dialog_value: "", command_dialog_visible: False)
+      #(
+        Model(..model, command_dialog_value: "", command_dialog_visible: False),
+        effect.none(),
+      )
     }
     UserOpenCommandDialog -> {
-      Model(..model, command_dialog_value: "", command_dialog_visible: True)
+      #(
+        Model(..model, command_dialog_value: "", command_dialog_visible: True),
+        effect.none(),
+      )
     }
-    VideoRemoved(cfb_game) ->
+    VideoRemoved(cfb_game) -> #(
       Model(
         ..model,
         games: list.filter(model.games, fn(game) { game != cfb_game }),
-      )
+      ),
+      effect.none(),
+    )
     VideoFocused(cfb_game) -> {
       let assert Ok(first_game) = list.first(model.games)
       case first_game == cfb_game {
         True -> {
           video.unmute(first_game.video_id)
-          Model(..model, games: model.games)
+          #(Model(..model, games: model.games), effect.none())
         }
         False -> {
           video.mute(first_game.video_id)
           video.unmute(cfb_game.video_id)
-          Model(
-            ..model,
-            games: list.concat([
-              [CfbGame(video_id: cfb_game.video_id)],
-              list.filter(model.games, fn(game) { game != cfb_game }),
-            ]),
+          #(
+            Model(
+              ..model,
+              games: list.flatten([
+                [CfbGame(video_id: cfb_game.video_id)],
+                list.filter(model.games, fn(game) { game != cfb_game }),
+              ]),
+            ),
+            effect.none(),
           )
         }
       }

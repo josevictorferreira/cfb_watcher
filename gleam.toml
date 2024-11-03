@@ -18,8 +18,7 @@ gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 lustre = ">= 4.5.1 and < 5.0.0"
 gleam_json = ">= 1.0.1 and < 2.0.0"
 sketch = ">= 3.1.0 and < 4.0.0"
-# sketch_css = ">= 1.1.0 and < 2.0.0"
-sketch_css = { path = "./sketch/sketch_css" }
+sketch_css = ">= 1.1.1 and < 2.0.0"
 plinth = ">= 0.5.0 and < 1.0.0"
 
 

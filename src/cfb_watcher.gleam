@@ -10,6 +10,7 @@ import lustre/element
 import lustre/element/html
 import lustre/event
 import sketch/styles/cfb_watcher_styles as styles
+import utils/url
 
 pub fn main() {
   let app = lustre.application(init, update, view)
@@ -32,6 +33,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       ],
       command_dialog_visible: False,
       command_dialog_value: "",
+      command_dialog_valid: False,
     ),
     effect.none(),
   )
@@ -46,25 +48,67 @@ pub opaque type Model {
     games: List(CfbGame),
     command_dialog_visible: Bool,
     command_dialog_value: String,
+    command_dialog_valid: Bool,
   )
 }
 
 pub opaque type Msg {
-  VideoFocused(CfbGame)
-  VideoRemoved(CfbGame)
-  UserOpenCommandDialog
+  UserFocusedVideo(CfbGame)
+  UserRemovedVideo(CfbGame)
+  UserOpenedCommandDialog
   UserClosedCommandDialog
   UserInputtedCommandDialog(String)
-  UserSubmitCommandDialog
+  UserSubmittedCommandDialog
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserInputtedCommandDialog(value) -> {
-      #(Model(..model, command_dialog_value: value), effect.none())
+      case url.youtube_url_valid(value) {
+        True -> #(
+          Model(
+            ..model,
+            command_dialog_value: value,
+            command_dialog_valid: True,
+          ),
+          effect.none(),
+        )
+        False -> #(
+          Model(
+            ..model,
+            command_dialog_value: value,
+            command_dialog_valid: False,
+          ),
+          effect.none(),
+        )
+      }
     }
-    UserSubmitCommandDialog -> {
-      #(Model(..model, command_dialog_visible: False), effect.none())
+    UserSubmittedCommandDialog -> {
+      case url.youtube_url_valid(model.command_dialog_value) {
+        False -> #(
+          Model(
+            ..model,
+            command_dialog_value: model.command_dialog_value,
+            command_dialog_valid: False,
+          ),
+          effect.none(),
+        )
+        True -> {
+          let assert Ok(video_id) =
+            url.extract_youtube_id(model.command_dialog_value)
+          let new_game = CfbGame(video_id: video_id)
+
+          #(
+            Model(
+              games: [new_game, ..model.games],
+              command_dialog_value: "",
+              command_dialog_visible: False,
+              command_dialog_valid: False,
+            ),
+            effect.none(),
+          )
+        }
+      }
     }
     UserClosedCommandDialog -> {
       #(
@@ -72,20 +116,20 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
-    UserOpenCommandDialog -> {
+    UserOpenedCommandDialog -> {
       #(
         Model(..model, command_dialog_value: "", command_dialog_visible: True),
-        effect.none(),
+        command_dialog.focus_command_dialog_input_effect(),
       )
     }
-    VideoRemoved(cfb_game) -> #(
+    UserRemovedVideo(cfb_game) -> #(
       Model(
         ..model,
         games: list.filter(model.games, fn(game) { game != cfb_game }),
       ),
       effect.none(),
     )
-    VideoFocused(cfb_game) -> {
+    UserFocusedVideo(cfb_game) -> {
       let assert Ok(first_game) = list.first(model.games)
       case first_game == cfb_game {
         True -> {
@@ -114,19 +158,31 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 pub fn view(model: Model) -> element.Element(Msg) {
   html.div([attribute.class(styles.container)], [
     curtain_button(),
-    command_dialog(model.command_dialog_visible, model.command_dialog_value),
+    command_dialog(
+      visible: model.command_dialog_visible,
+      input_value: model.command_dialog_value,
+      is_valid: model.command_dialog_valid,
+    ),
     video_panel(model.games),
   ])
 }
 
-fn command_dialog(visible: Bool, input_value: String) {
+fn command_dialog(
+  visible visible: Bool,
+  input_value input_value: String,
+  is_valid is_valid: Bool,
+) {
   command_dialog.new(
-    UserClosedCommandDialog,
-    visible,
-    input_value,
-    [event.on_click(UserSubmitCommandDialog)],
-    [event.on_click(UserClosedCommandDialog)],
-    [event.on_input(fn(value: String) { UserInputtedCommandDialog(value) })],
+    msg: UserClosedCommandDialog,
+    visible: visible,
+    placeholder: "Enter a valid YouTube URL",
+    input_value: input_value,
+    is_valid: is_valid,
+    submit_attributes: [event.on_click(UserSubmittedCommandDialog)],
+    cancel_attributes: [event.on_click(UserClosedCommandDialog)],
+    input_attributes: [
+      event.on_input(fn(value: String) { UserInputtedCommandDialog(value) }),
+    ],
   )
   |> command_dialog.view
 }
@@ -143,8 +199,8 @@ fn video_panel(games: List(CfbGame)) {
 }
 
 fn curtain_button() -> element.Element(Msg) {
-  curtain_button.new(UserOpenCommandDialog, [
-    event.on_click(UserOpenCommandDialog),
+  curtain_button.new(UserOpenedCommandDialog, [
+    event.on_click(UserOpenedCommandDialog),
   ])
   |> curtain_button.view
 }
@@ -200,27 +256,18 @@ fn small_videos(games: List(CfbGame)) -> element.Element(Msg) {
 }
 
 fn video_view(game: CfbGame, muted: Bool) -> element.Element(Msg) {
-  video.new(game.video_id, youtube_video_url(game, muted))
+  video.new(
+    game.video_id,
+    url.format_youtube_video_url(video_id: game.video_id, muted: muted),
+  )
   |> video.view
 }
 
 fn video_overlay_view(game: CfbGame) -> element.Element(Msg) {
-  video_overlay.new(VideoFocused(game), [event.on_click(VideoFocused(game))], [
-    event.on_click(VideoRemoved(game)),
-  ])
+  video_overlay.new(
+    UserFocusedVideo(game),
+    [event.on_click(UserFocusedVideo(game))],
+    [event.on_click(UserRemovedVideo(game))],
+  )
   |> video_overlay.view
-}
-
-fn youtube_video_url(game: CfbGame, muted: Bool) -> String {
-  let mute = case muted {
-    True -> "1"
-    False -> "0"
-  }
-
-  "https://www.youtube.com/embed/"
-  <> game.video_id
-  <> "?enablejsapi=1"
-  <> "&autoplay=1"
-  <> "&mute="
-  <> mute
 }

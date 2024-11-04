@@ -40,6 +40,12 @@ fn command_input() -> Class {
   ])
 }
 
+fn command_input_invalid() -> Class {
+  s.class([
+    s.focus([s.border("2px solid red !important"), s.outline("none !important")]),
+  ])
+}
+
 fn command_dialog_button() -> Class {
   s.class([
     s.background_color("#333"),
@@ -54,11 +60,15 @@ fn command_dialog_button() -> Class {
 }
 
 fn submit_button() -> Class {
-  s.class([s.background_color("#333"), s.color("white")])
+  s.class([s.background_color("green"), s.color("white")])
+}
+
+fn submit_button_disabled() -> Class {
+  s.class([s.background_color("#ccc"), s.color("#333")])
 }
 
 fn cancel_button() -> Class {
-  s.class([s.background_color("#ccc"), s.color("#333")])
+  s.class([s.background_color("#333"), s.color("white")])
 }
 
 fn show() -> Class {

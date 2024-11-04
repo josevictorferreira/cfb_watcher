@@ -30,6 +30,11 @@
   margin-bottom: 10px;
 }
 
+.command-input-invalid:focus {
+  border: 2px solid red !important;
+  outline: none !important;
+}
+
 .command-dialog-button {
   background-color: #333;
   color: white;
@@ -42,13 +47,18 @@
 }
 
 .submit-button {
-  background-color: #333;
+  background-color: green;
   color: white;
 }
 
-.cancel-button {
+.submit-button-disabled {
   background-color: #ccc;
   color: #333;
+}
+
+.cancel-button {
+  background-color: #333;
+  color: white;
 }
 
 .show {

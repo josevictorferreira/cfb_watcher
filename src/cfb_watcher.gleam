@@ -35,7 +35,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       command_dialog_value: "",
       command_dialog_valid: False,
     ),
-    effect.none(),
+    video.unmute_effect("mjikSatnIOY"),
   )
 }
 
@@ -147,7 +147,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 list.filter(model.games, fn(game) { game != cfb_game }),
               ]),
             ),
-            effect.none(),
+            effect.batch([
+              video.mute_effect(first_game.video_id),
+              video.unmute_effect(cfb_game.video_id),
+            ]),
           )
         }
       }

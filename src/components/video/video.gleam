@@ -1,5 +1,7 @@
 import lustre/attribute
+import lustre/effect
 import lustre/element/html
+import plinth/browser/window
 import sketch/styles/components/video/video_styles as styles
 
 pub opaque type VideoProps {
@@ -60,4 +62,20 @@ pub fn mute(id: String) {
 
 pub fn unmute(id: String) {
   video_command(id, UnMute)
+}
+
+pub fn play_effect(id: String) {
+  effect.from(fn(_) { play(id) })
+}
+
+pub fn pause_effect(id: String) {
+  effect.from(fn(_) { pause(id) })
+}
+
+pub fn mute_effect(id: String) {
+  effect.from(fn(_) { mute(id) })
+}
+
+pub fn unmute_effect(id: String) {
+  effect.from(fn(_) { unmute(id) })
 }

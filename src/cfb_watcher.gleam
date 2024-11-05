@@ -105,7 +105,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               command_dialog_visible: False,
               command_dialog_valid: False,
             ),
-            effect.none(),
+            effect.batch([
+              video.play_effect(new_game.video_id),
+              video.unmute_effect(new_game.video_id),
+            ]),
           )
         }
       }
@@ -122,23 +125,20 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         command_dialog.focus_command_dialog_input_effect(),
       )
     }
-    UserRemovedVideo(cfb_game) -> #(
-      Model(
-        ..model,
-        games: list.filter(model.games, fn(game) { game != cfb_game }),
-      ),
-      effect.none(),
-    )
+    UserRemovedVideo(cfb_game) -> {
+      let games = list.filter(model.games, fn(game) { game != cfb_game })
+
+      let assert Ok(first_video) = list.first(games)
+
+      #(Model(..model, games: games), video.unmute_effect(first_video.video_id))
+    }
     UserFocusedVideo(cfb_game) -> {
       let assert Ok(first_game) = list.first(model.games)
       case first_game == cfb_game {
         True -> {
-          video.unmute(first_game.video_id)
           #(Model(..model, games: model.games), effect.none())
         }
         False -> {
-          video.mute(first_game.video_id)
-          video.unmute(cfb_game.video_id)
           #(
             Model(
               ..model,

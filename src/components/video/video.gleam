@@ -65,17 +65,29 @@ pub fn unmute(id: String) {
 }
 
 pub fn play_effect(id: String) {
-  effect.from(fn(_) { play(id) })
+  effect.from(fn(_) {
+    window.request_animation_frame(fn(_) { play(id) })
+    Nil
+  })
 }
 
 pub fn pause_effect(id: String) {
-  effect.from(fn(_) { pause(id) })
+  effect.from(fn(_) {
+    window.request_animation_frame(fn(_) { pause(id) })
+    Nil
+  })
 }
 
 pub fn mute_effect(id: String) {
-  effect.from(fn(_) { mute(id) })
+  effect.from(fn(_) {
+    window.request_animation_frame(fn(_) { mute(id) })
+    Nil
+  })
 }
 
 pub fn unmute_effect(id: String) {
-  effect.from(fn(_) { unmute(id) })
+  effect.from(fn(_) {
+    window.request_animation_frame(fn(_) { unmute(id) })
+    Nil
+  })
 }

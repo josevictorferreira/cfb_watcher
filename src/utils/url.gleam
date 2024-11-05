@@ -27,6 +27,7 @@ pub fn format_youtube_video_url(
   "https://www.youtube.com/embed/"
   <> video_id
   <> "?enablejsapi=1"
+  <> "&cc_load_policy=3"
   <> "&autoplay=1"
   <> "&mute="
   <> mute

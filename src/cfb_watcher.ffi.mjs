@@ -1,5 +1,5 @@
 export async function sendCommandToVideo(id, command) {
-  await new Promise(r => setTimeout(r, 3600));
+  await new Promise(r => setTimeout(r, 2800));
 
   var el = document.getElementById(id)
 

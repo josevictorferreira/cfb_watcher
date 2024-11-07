@@ -31,7 +31,7 @@ pub fn view(video_props: VideoProps) {
   ])
 }
 
-@external(javascript, "../../cfb_watcher.ffi.mjs", "sendCommandToVideo")
+@external(javascript, "./video.ffi.mjs", "sendCommandToVideo")
 fn send_command_to_video(id: String, command: String) -> a
 
 pub fn video_command(id: String, command: VideoCommands) {

@@ -3,14 +3,15 @@ import components/curtain_button/curtain_button
 import components/video/video
 import components/video_overlay/video_overlay
 import gleam/list
+import lib/url
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element
 import lustre/element/html
 import lustre/event
+import models/cfb_game.{type CfbGame, CfbGame}
 import sketch/styles/cfb_watcher_styles as styles
-import utils/url
 
 pub fn main() {
   let app = lustre.application(init, update, view)
@@ -20,27 +21,21 @@ pub fn main() {
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
+  let saved_games = cfb_game.load()
+  let first_game = case list.first(saved_games) {
+    Ok(game) -> game
+    _ -> CfbGame(video_id: "")
+  }
+
   #(
     Model(
-      games: [
-        CfbGame(video_id: "mjikSatnIOY"),
-        CfbGame(video_id: "LmAaCgp9YyE"),
-        CfbGame(video_id: "sPtP830hITs"),
-        CfbGame(video_id: "9FgQ6qvMePk"),
-        CfbGame(video_id: "PQ2r0sV1hUs"),
-        CfbGame(video_id: "RBZ8FnSXfLs"),
-        CfbGame(video_id: "7VjKEkqry6g"),
-      ],
+      games: saved_games,
       command_dialog_visible: False,
       command_dialog_value: "",
       command_dialog_valid: False,
     ),
-    video.unmute_effect("mjikSatnIOY"),
+    video.unmute_effect(first_game.video_id),
   )
-}
-
-pub opaque type CfbGame {
-  CfbGame(video_id: String)
 }
 
 pub opaque type Model {
@@ -94,8 +89,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           effect.none(),
         )
         True -> {
-          let assert Ok(video_id) =
-            url.extract_youtube_id(model.command_dialog_value)
+          let video_id = url.extract_youtube_id(model.command_dialog_value)
           let new_game = CfbGame(video_id: video_id)
 
           #(
@@ -108,6 +102,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             effect.batch([
               video.play_effect(new_game.video_id),
               video.unmute_effect(new_game.video_id),
+              cfb_game.save_effect([new_game, ..model.games]),
             ]),
           )
         }
@@ -130,7 +125,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
       let assert Ok(first_video) = list.first(games)
 
-      #(Model(..model, games: games), video.unmute_effect(first_video.video_id))
+      #(
+        Model(..model, games: games),
+        effect.batch([
+          video.unmute_effect(first_video.video_id),
+          cfb_game.save_effect(games),
+        ]),
+      )
     }
     UserFocusedVideo(cfb_game) -> {
       let assert Ok(first_game) = list.first(model.games)
@@ -139,17 +140,17 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           #(Model(..model, games: model.games), effect.none())
         }
         False -> {
+          let games =
+            list.flatten([
+              [CfbGame(video_id: cfb_game.video_id)],
+              list.filter(model.games, fn(game) { game != cfb_game }),
+            ])
           #(
-            Model(
-              ..model,
-              games: list.flatten([
-                [CfbGame(video_id: cfb_game.video_id)],
-                list.filter(model.games, fn(game) { game != cfb_game }),
-              ]),
-            ),
+            Model(..model, games: games),
             effect.batch([
               video.mute_effect(first_game.video_id),
               video.unmute_effect(cfb_game.video_id),
+              cfb_game.save_effect(games),
             ]),
           )
         }

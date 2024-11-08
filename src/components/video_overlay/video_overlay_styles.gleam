@@ -21,8 +21,8 @@ fn overlay() -> Class {
 
 fn overlay_button() -> Class {
   s.class([
-    s.background_color("#ffffff"),
-    s.color("#000000"),
+    s.background_color("#333333"),
+    s.color("#F5F5F7"),
     s.border("none"),
     s.padding(px(10)),
     s.margin(px(5)),

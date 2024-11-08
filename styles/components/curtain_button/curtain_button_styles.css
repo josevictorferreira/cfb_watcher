@@ -4,7 +4,7 @@
   right: 20px;
   width: 40px;
   height: 40px;
-  background-color: #333;
+  background-color: #333333;
   border-radius: 5px;
   overflow: hidden;
   cursor: pointer;
@@ -27,7 +27,7 @@
 
 .add-icon {
   font-size: 20px;
-  color: white;
+  color: #F5F5F7;
   transition: transform 0.3s ease;
 }
 

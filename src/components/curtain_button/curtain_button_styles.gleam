@@ -9,7 +9,7 @@ fn curtain_button() -> Class {
     s.right(px(20)),
     s.width(px(40)),
     s.height(px(40)),
-    s.background_color("#333"),
+    s.background_color("#333333"),
     s.border_radius(px(5)),
     s.overflow("hidden"),
     s.cursor("pointer"),
@@ -32,7 +32,7 @@ fn curtain_content() -> Class {
 fn add_icon() -> Class {
   s.class([
     s.font_size(px(20)),
-    s.color("white"),
+    s.color("#F5F5F7"),
     s.transition("transform 0.3s ease"),
     s.hover([s.transform("scale(1.2)")]),
   ])

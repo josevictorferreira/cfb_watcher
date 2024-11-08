@@ -60,15 +60,15 @@ fn command_dialog_button() -> Class {
 }
 
 fn submit_button() -> Class {
-  s.class([s.background_color("green"), s.color("white")])
+  s.class([s.background_color("#2997FF"), s.color("#F5F5F7")])
 }
 
 fn submit_button_disabled() -> Class {
-  s.class([s.background_color("#ccc"), s.color("#333")])
+  s.class([s.background_color("#D6D6D6"), s.color("#FFFFFF")])
 }
 
 fn cancel_button() -> Class {
-  s.class([s.background_color("#333"), s.color("white")])
+  s.class([s.background_color("#333333"), s.color("#F5F5F7")])
 }
 
 fn show() -> Class {

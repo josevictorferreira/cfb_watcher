@@ -1,0 +1,16 @@
+services:
+  cfb-watcher-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cfb-watcher-web
+    image: cfb-watcher-web
+    ports:
+      - 1234:1234
+    volumes:
+      - type: bind
+        source: ./
+        target: /app
+
+volumes:
+  dev:

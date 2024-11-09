@@ -1,3 +1,15 @@
+up: ## Start docker containers
+	docker-compose up
+
+upd: ## Start docker containers in detached mode
+	docker-compose up -d
+
+build: ## Build docker image
+	docker-compose build
+
+buildf: ## Build docker image with no cache
+	docker-compose build --no-cache
+
 dev: ## Run dev environment
 	make gen_css
 	gleam run -m lustre/dev start
